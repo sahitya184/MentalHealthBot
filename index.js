@@ -5,6 +5,11 @@ const fetch = require("node-fetch");
 const app = express();
 app.use(bodyParser.json());
 
+app.get("/", (req, res) => {
+  res.send("Mental Health Bot Webhook is running successfully!");
+});
+
+
 // Webhook route for Dialogflow
 app.post("/webhook", async (req, res) => {
   const intentName = req.body.queryResult.intent.displayName;
