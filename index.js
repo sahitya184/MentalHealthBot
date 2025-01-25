@@ -50,6 +50,53 @@ app.post("/webhook", async (req, res) => {
       ],
     });
   }
+  if (intentName === 'Cheer Up') {
+    try {
+        // Fetching a random joke
+        const jokeResponse = await axios.get('https://official-joke-api.appspot.com/jokes/random');
+        const jokeSetup = jokeResponse.data.setup;
+        const jokePunchline = jokeResponse.data.punchline;
+
+        // Bot's response
+        const cheerUpResponse = `Here's something to cheer you up: ${jokeSetup} ... ${jokePunchline}`;
+
+        res.json({
+            fulfillmentMessages: [{ text: { text: [cheerUpResponse] } }]
+        });
+    } catch (error) {
+        console.error(error);
+        res.json({
+            fulfillmentMessages: [{ text: { text: ["Sorry, I couldn't fetch anything to cheer you up right now."] } }]
+        });
+    }
+}
+
+if (intentName === 'Coping Strategies') {
+  try {
+      // Example coping strategies (static for now)
+      const copingStrategies = [
+          "Take deep breaths and count to 10 slowly.",
+          "Write down your feelings in a journal.",
+          "Go for a short walk outside.",
+          "Talk to a trusted friend or family member.",
+          "Listen to calming music or a guided meditation."
+      ];
+
+      // Randomly select a strategy
+      const randomStrategy = copingStrategies[Math.floor(Math.random() * copingStrategies.length)];
+
+      res.json({
+          fulfillmentMessages: [{ text: { text: [randomStrategy] } }]
+      });
+  } catch (error) {
+      console.error(error);
+      res.json({
+          fulfillmentMessages: [{ text: { text: ["Sorry, I couldn't fetch a coping strategy right now."] } }]
+      });
+  }
+}
+
+
 });
 
 // Start the server
