@@ -18,7 +18,7 @@ This is a conversational AI bot designed to provide mental health support. The b
 
 ## How to Use
 
-- Clone the repository.
+- Clone the repository: https://github.com/sahitya184/MentalHealthBot.git
 - Install dependencies using `npm install`.
 - Start the webhook server using `node webhook.js`.
 
