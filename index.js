@@ -1,14 +1,17 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const fetch = require("node-fetch");
-const axios = require("axios"); // Import axios
+const axios = require("axios");
+const admin = require("firebase-admin"); // Import Firebase Admin SDK
+
+// Initialize Firebase Admin SDK (Make sure you have the credentials JSON file)
+admin.initializeApp({
+  credential: admin.credential.applicationDefault(), // Update if necessary
+  databaseURL: "https://myfirstproject-cccc5.firebaseio.com" // Replace with your Firebase DB URL
+});
 
 const app = express();
 app.use(bodyParser.json());
-
-app.get("/", (req, res) => {
-  res.send("Mental Health Bot Webhook is running successfully!");
-});
 
 // Webhook route for Dialogflow
 app.post("/webhook", async (req, res) => {
@@ -23,7 +26,6 @@ app.post("/webhook", async (req, res) => {
       const quote = data[0]?.q || "Stay motivated!";
       const author = data[0]?.a || "Unknown";
 
-      // Respond to Dialogflow
       return res.json({
         fulfillmentMessages: [
           {
@@ -60,6 +62,54 @@ app.post("/webhook", async (req, res) => {
 
       return res.json({
         fulfillmentMessages: [{ text: { text: [randomStrategy] } }],
+      });
+    }
+
+    if (intentName === "Log Mood") {
+      // Capture user mood and log it in Firebase
+      const userMood = req.body.queryResult.parameters.mood;
+      const userId = req.body.session; // Assuming session ID as user ID
+
+      // Log the mood to Firestore
+      await admin.firestore().collection("moods").doc(userId).set({
+        mood: userMood,
+        timestamp: admin.firestore.FieldValue.serverTimestamp(),
+      });
+
+      return res.json({
+        fulfillmentMessages: [
+          {
+            text: { text: [`Your mood, '${userMood}', has been logged.`] },
+          },
+        ],
+      });
+    }
+
+    if (intentName === "Capture Profile") {
+      // Capture user profile and save to Firebase
+      const userName = req.body.queryResult.parameters.userName;
+      const userAge = req.body.queryResult.parameters.userAge;
+      const userPreferences = req.body.queryResult.parameters.userPreferences;
+      const userId = req.body.session; // Assuming session ID as user ID
+
+      // Save user profile data to Firestore
+      await admin.firestore().collection("users").doc(userId).set({
+        name: userName,
+        age: userAge,
+        preferences: userPreferences,
+        timestamp: admin.firestore.FieldValue.serverTimestamp(),
+      });
+
+      return res.json({
+        fulfillmentMessages: [
+          {
+            text: {
+              text: [
+                `Your profile has been updated. Name: ${userName}, Age: ${userAge}, Preferences: ${userPreferences}.`,
+              ],
+            },
+          },
+        ],
       });
     }
 
