@@ -5,10 +5,19 @@ const axios = require("axios");
 const admin = require("firebase-admin"); // Import Firebase Admin SDK
 
 // Initialize Firebase Admin SDK (Make sure you have the credentials JSON file)
+
 admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+  databaseURL: "https://myfirstproject-cccc5.firebaseio.com",
+});
+admin.firestore().settings({ ignoreUndefinedProperties: true });
+
+
+
+/*admin.initializeApp({
   credential: admin.credential.applicationDefault(), // Update if necessary
   databaseURL: "https://myfirstproject-cccc5.firebaseio.com" // Replace with your Firebase DB URL
-});
+});*/
 
 const app = express();
 app.use(bodyParser.json());
@@ -85,33 +94,62 @@ app.post("/webhook", async (req, res) => {
       });
     }
 
-    if (intentName === "Capture Profile") {
-      // Capture user profile and save to Firebase
-      const userName = req.body.queryResult.parameters.userName;
-      const userAge = req.body.queryResult.parameters.userAge;
-      const userPreferences = req.body.queryResult.parameters.userPreferences;
-      const userId = req.body.session; // Assuming session ID as user ID
-
-      // Save user profile data to Firestore
-      await admin.firestore().collection("users").doc(userId).set({
-        name: userName,
-        age: userAge,
-        preferences: userPreferences,
-        timestamp: admin.firestore.FieldValue.serverTimestamp(),
-      });
-
-      return res.json({
-        fulfillmentMessages: [
-          {
-            text: {
-              text: [
-                `Your profile has been updated. Name: ${userName}, Age: ${userAge}, Preferences: ${userPreferences}.`,
-              ],
+    if (intentName === "Capture Profile") { 
+      try {
+        // Capture user profile details from the request
+        const userName = req.body.queryResult.parameters.userName || "Unknown";
+        const userAge = req.body.queryResult.parameters.userAge || null;
+        const userPreferences = req.body.queryResult.parameters.userPreferences || "No preferences specified";
+        const userId = req.body.session.split("/").pop(); // Extract user ID from session
+    
+        // Construct the user profile object
+        const userProfile = {
+          name: userName,
+          age: userAge,
+          preferences: userPreferences,
+          timestamp: admin.firestore.FieldValue.serverTimestamp(),
+        };
+    
+        // Ensure no undefined values are passed to Firestore
+        Object.keys(userProfile).forEach((key) => {
+          if (userProfile[key] === undefined) {
+            delete userProfile[key];
+          }
+        });
+    
+        // Save user profile data to Firestore
+        await admin.firestore().collection("users").doc(userId).set(userProfile);
+    
+        // Respond to Dialogflow
+        return res.json({
+          fulfillmentMessages: [
+            {
+              text: {
+                text: [
+                  `Your profile has been updated. Name: ${userName}, Age: ${userAge}, Preferences: ${userPreferences}.`,
+                ],
+              },
             },
-          },
-        ],
-      });
+          ],
+        });
+      } catch (error) {
+        console.error("Error capturing profile:", error.message);
+    
+        // Error response for Dialogflow
+        return res.json({
+          fulfillmentMessages: [
+            {
+              text: {
+                text: [
+                  "Sorry, there was an error updating your profile. Please try again later.",
+                ],
+              },
+            },
+          ],
+        });
+      }
     }
+    
 
     // If no matching intent, send default response
     return res.json({

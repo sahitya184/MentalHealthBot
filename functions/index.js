@@ -13,7 +13,7 @@ exports.logMood = functions.https.onRequest((req, res) => {
     timestamp: admin.firestore.FieldValue.serverTimestamp(),
   }).then(() => {
     res.json({
-      fulfillmentText: `Your mood, "${userMood}", has been logged. Would you like to track your mood over time?`,
+      fulfillmentText: `Your mood, "${userMood}", has been logged.`,
     });
   }).catch((error) => {
     res.json({
