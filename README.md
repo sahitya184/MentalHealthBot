@@ -1,27 +1,74 @@
-# Mental Health Bot
+# Mental Health Support Chatbot
 
-This is a conversational AI bot designed to provide mental health support. The bot offers motivational quotes, listening support, and coping strategies for users.
+This repository contains the complete source code and configuration files for the **Mental Health Support Chatbot**, designed to provide users with motivational quotes, jokes, and coping strategies. The bot is integrated with Telegram and uses Dialogflow for intent recognition and webhook fulfillment for dynamic responses.
 
 ## Features
 
-- **Motivational Quotes**: Provides uplifting quotes to help improve mental well-being.
-- **Listening Support**: Offers a platform for users to express themselves.
-- **Coping Strategies**: Provides advice and coping mechanisms for stressful situations.
+- **Dynamic Responses via Webhook**: Fetches live data for motivational quotes and jokes.
+- **Dialogflow Agent**: Handles user intents such as "Get Motivation," "Cheer Up," and "Coping Strategies."
+- **Telegram Integration**: Allows users to interact with the bot via Telegram.
 
-## Technologies Used
+## Prerequisites
 
-- **Dialogflow ES** for building the conversational model
-- **Node.js** for the backend API (Webhook)
-- **Express.js** for routing the API
-- **External API** for motivational quotes
+1. **Node.js** (for webhook server): Ensure you have Node.js installed.
+2. **Dialogflow**: Google Cloud project configured with Dialogflow.
+3. **Telegram**: Telegram bot created using BotFather.
 
+## Setup Instructions
 
-## How to Use
+### **Step 1: Clone the Repository**
 
-- Clone the repository: https://github.com/sahitya184/MentalHealthBot.git
-- Install dependencies using `npm install`.
-- Start the webhook server using `node webhook.js`.
+git clone <repository-url>
+cd mental-health-bot
 
-## Deployment
+### **Step 2: Setup Webhook**
 
-The bot is deployed on [Render](https://render.com) and integrated with Dialogflow.
+1. Navigate to the `webhook/` directory:
+   cd webhook
+ 
+2. Install dependencies:
+   npm install
+  
+3. Start the server:
+   node index.js
+  
+
+### **Step 3: Deploy Webhook**
+
+1. Deploy the webhook code to a hosting service like **Render**, **Google Cloud**, or **Heroku**.
+2. Copy the deployed URL and set it as the **fulfillment webhook** in Dialogflow.
+
+### **Step 4: Import Dialogflow Agent**
+
+1. Go to the [Dialogflow Console](https://dialogflow.cloud.google.com/).
+2. Select your project and navigate to the **Settings** > **Export and Import** tab.
+3. Import the `dialogflow/` folder as a ZIP file.
+
+### **Step 5: Telegram Integration**
+
+1. Use the Telegram **BotFather** to create a new bot and get the token.
+2. Add the Telegram API token in the webhook code (if applicable).
+
+## Testing the Bot
+
+### **Telegram**
+
+1. Open Telegram and search for your bot by its username.
+2. Interact with the bot using the following commands:
+   - "Get Motivation": Fetches a motivational quote.
+   - "Cheer Up": Sends a random joke.
+   - "Coping Strategies": Provides a random coping strategy.
+
+### **Dialogflow Console**
+
+1. Test intents directly in the Dialogflow Console.
+2. Check fulfillment responses returned by the webhook.
+
+## Future Improvements
+
+- Add more intents and dynamic responses.
+- Integrate with additional platforms like Slack or WhatsApp.
+- Enable sentiment analysis for personalized responses.  
+
+For any issues or inquiries, feel free to open an issue in this repository or contact me directly.
+
