@@ -1,0 +1,65 @@
+{
+  "id": "6853046d-e9fb-485b-92fa-0b4cdd8a3fd8",
+  "name": "Coping Strategies",
+  "auto": true,
+  "contexts": [],
+  "responses": [
+    {
+      "resetContexts": false,
+      "action": "",
+      "affectedContexts": [],
+      "parameters": [],
+      "messages": [
+        {
+          "type": "0",
+          "title": "",
+          "textToSpeech": "",
+          "lang": "en",
+          "speech": [
+            "Here are some coping strategies to help you manage your emotions: \\n1. Practice deep breathing \\n2. Engage in physical activity \\n3. Try mindfulness meditation."
+          ],
+          "condition": ""
+        },
+        {
+          "type": "4",
+          "title": "",
+          "payload": {
+            "fulfillmentMessages": [
+              {
+                "payload": {
+                  "richContent": [
+                    [
+                      {
+                        "type": "text",
+                        "text": [
+                          "Here are some coping strategies to help you manage your emotions: \n1. Practice deep breathing \n2. Engage in physical activity \n3. Try mindfulness meditation"
+                        ]
+                      },
+                      {
+                        "type": "button",
+                        "text": "Learn More About Coping Strategies",
+                        "link": "https://www.mentalhealth.gov/topics/coping-strategies"
+                      }
+                    ]
+                  ]
+                }
+              }
+            ]
+          },
+          "textToSpeech": "",
+          "lang": "en",
+          "condition": ""
+        }
+      ],
+      "speech": []
+    }
+  ],
+  "priority": 500000,
+  "webhookUsed": true,
+  "webhookForSlotFilling": false,
+  "fallbackIntent": false,
+  "events": [],
+  "conditionalResponses": [],
+  "condition": "",
+  "conditionalFollowupEvents": []
+}

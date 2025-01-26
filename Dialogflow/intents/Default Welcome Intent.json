@@ -1,0 +1,84 @@
+{
+  "id": "546074cf-e9ad-4179-820c-64e7d1e27ce2",
+  "name": "Default Welcome Intent",
+  "auto": true,
+  "contexts": [],
+  "responses": [
+    {
+      "resetContexts": false,
+      "action": "input.welcome",
+      "affectedContexts": [
+        {
+          "name": "welcome_followup",
+          "lifespan": 5
+        }
+      ],
+      "parameters": [],
+      "messages": [
+        {
+          "type": "4",
+          "title": "",
+          "payload": {
+            "fulfillmentMessages": [
+              {
+                "payload": {
+                  "richContent": [
+                    [
+                      {
+                        "text": [
+                          "Hello! How are you feeling today? I\u0027m here to help."
+                        ],
+                        "type": "text"
+                      },
+                      {
+                        "link": "https://zenquotes.io/api/random",
+                        "text": "I need some motivation",
+                        "type": "button"
+                      },
+                      {
+                        "text": "Tell me a joke",
+                        "type": "button",
+                        "link": "https://v2.jokeapi.dev/joke/Any"
+                      },
+                      {
+                        "link": "https://www.mentalhealth.gov",
+                        "type": "button",
+                        "text": "I need help"
+                      }
+                    ]
+                  ]
+                }
+              }
+            ]
+          },
+          "textToSpeech": "",
+          "lang": "en",
+          "condition": ""
+        },
+        {
+          "type": "0",
+          "title": "",
+          "textToSpeech": "",
+          "lang": "en",
+          "speech": [
+            "Hello! I\u0027m your mental health companion. How are you feeling today? I\u0027m here to help."
+          ],
+          "condition": ""
+        }
+      ],
+      "speech": []
+    }
+  ],
+  "priority": 500000,
+  "webhookUsed": false,
+  "webhookForSlotFilling": false,
+  "fallbackIntent": false,
+  "events": [
+    {
+      "name": "WELCOME"
+    }
+  ],
+  "conditionalResponses": [],
+  "condition": "",
+  "conditionalFollowupEvents": []
+}
