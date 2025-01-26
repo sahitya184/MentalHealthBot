@@ -4,27 +4,32 @@ const fetch = require("node-fetch");
 const axios = require("axios");
 const admin = require("firebase-admin"); // Import Firebase Admin SDK
 
-// Initialize Firebase Admin SDK (Make sure you have the credentials JSON file)
-const serviceAccount = require("./service-account-key.json");
-
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-  databaseURL: "https://myfirstproject-cccc5.firebaseio.com",
-});
-admin.firestore().settings({ ignoreUndefinedProperties: true });
-
-
-
-/*admin.initializeApp({
-  credential: admin.credential.applicationDefault(), // Update if necessary
-  databaseURL: "https://myfirstproject-cccc5.firebaseio.com" // Replace with your Firebase DB URL
-});*/
+// Initialize Firebase Admin SDK (Make sure you have Firebase credentials)
+admin.initializeApp();
 
 const app = express();
 app.use(bodyParser.json());
 
+// Middleware for Firebase Authentication
+const authenticateRequest = async (req, res, next) => {
+  const idToken = req.headers.authorization?.split("Bearer ")[1];
+
+  if (!idToken) {
+    return res.status(401).json({ error: "Unauthorized: No token provided" });
+  }
+
+  try {
+    // Verify Firebase ID Token
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
+    req.user = decodedToken; // Attach decoded user data to the request object
+    next(); // Continue to the next middleware/route
+  } catch (error) {
+    return res.status(401).json({ error: "Unauthorized: Invalid token" });
+  }
+};
+
 // Webhook route for Dialogflow
-app.post("/webhook", async (req, res) => {
+app.post("/webhook", authenticateRequest, async (req, res) => {
   const intentName = req.body.queryResult.intent.displayName;
 
   try {
@@ -95,7 +100,7 @@ app.post("/webhook", async (req, res) => {
       });
     }
 
-    if (intentName === "Capture Profile") { 
+    if (intentName === "Capture Profile") {
       try {
         // Capture user profile details from the request
         const userName = req.body.queryResult.parameters.userName || "Unknown";
@@ -150,7 +155,6 @@ app.post("/webhook", async (req, res) => {
         });
       }
     }
-    
 
     // If no matching intent, send default response
     return res.json({
