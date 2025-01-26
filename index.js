@@ -5,6 +5,7 @@ const axios = require("axios");
 const admin = require("firebase-admin"); // Import Firebase Admin SDK
 
 // Initialize Firebase Admin SDK (Make sure you have the credentials JSON file)
+const serviceAccount = require("./service-account-key.json");
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
