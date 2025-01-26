@@ -2,34 +2,12 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const fetch = require("node-fetch");
 const axios = require("axios");
-const admin = require("firebase-admin"); // Import Firebase Admin SDK
-
-// Initialize Firebase Admin SDK (Make sure you have Firebase credentials)
-admin.initializeApp();
 
 const app = express();
 app.use(bodyParser.json());
 
-// Middleware for Firebase Authentication
-const authenticateRequest = async (req, res, next) => {
-  const idToken = req.headers.authorization?.split("Bearer ")[1];
-
-  if (!idToken) {
-    return res.status(401).json({ error: "Unauthorized: No token provided" });
-  }
-
-  try {
-    // Verify Firebase ID Token
-    const decodedToken = await admin.auth().verifyIdToken(idToken);
-    req.user = decodedToken; // Attach decoded user data to the request object
-    next(); // Continue to the next middleware/route
-  } catch (error) {
-    return res.status(401).json({ error: "Unauthorized: Invalid token" });
-  }
-};
-
 // Webhook route for Dialogflow
-app.post("/webhook", authenticateRequest, async (req, res) => {
+app.post("/webhook", async (req, res) => {
   const intentName = req.body.queryResult.intent.displayName;
 
   try {
@@ -81,16 +59,8 @@ app.post("/webhook", authenticateRequest, async (req, res) => {
     }
 
     if (intentName === "Log Mood") {
-      // Capture user mood and log it in Firebase
+      // Capture user mood (without Firebase)
       const userMood = req.body.queryResult.parameters.mood;
-      const userId = req.body.session; // Assuming session ID as user ID
-
-      // Log the mood to Firestore
-      await admin.firestore().collection("moods").doc(userId).set({
-        mood: userMood,
-        timestamp: admin.firestore.FieldValue.serverTimestamp(),
-      });
-
       return res.json({
         fulfillmentMessages: [
           {
@@ -106,26 +76,7 @@ app.post("/webhook", authenticateRequest, async (req, res) => {
         const userName = req.body.queryResult.parameters.userName || "Unknown";
         const userAge = req.body.queryResult.parameters.userAge || null;
         const userPreferences = req.body.queryResult.parameters.userPreferences || "No preferences specified";
-        const userId = req.body.session.split("/").pop(); // Extract user ID from session
-    
-        // Construct the user profile object
-        const userProfile = {
-          name: userName,
-          age: userAge,
-          preferences: userPreferences,
-          timestamp: admin.firestore.FieldValue.serverTimestamp(),
-        };
-    
-        // Ensure no undefined values are passed to Firestore
-        Object.keys(userProfile).forEach((key) => {
-          if (userProfile[key] === undefined) {
-            delete userProfile[key];
-          }
-        });
-    
-        // Save user profile data to Firestore
-        await admin.firestore().collection("users").doc(userId).set(userProfile);
-    
+
         // Respond to Dialogflow
         return res.json({
           fulfillmentMessages: [
@@ -140,7 +91,7 @@ app.post("/webhook", authenticateRequest, async (req, res) => {
         });
       } catch (error) {
         console.error("Error capturing profile:", error.message);
-    
+
         // Error response for Dialogflow
         return res.json({
           fulfillmentMessages: [
