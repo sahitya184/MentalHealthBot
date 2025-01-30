@@ -1,0 +1,79 @@
+{
+  "id": "1553450e-fe06-4b5e-8f7c-2309e551fdd9",
+  "name": "Default Fallback Intent",
+  "auto": true,
+  "contexts": [],
+  "responses": [
+    {
+      "resetContexts": false,
+      "action": "input.unknown",
+      "affectedContexts": [],
+      "parameters": [],
+      "messages": [
+        {
+          "type": "0",
+          "title": "",
+          "textToSpeech": "",
+          "lang": "en",
+          "speech": [
+            "I didn\u0027t get that. Can you say it again?",
+            "Sorry, could you say that again?",
+            "Sorry, can you say that again?",
+            "Sorry, I didn\u0027t get that. Can you rephrase?",
+            "I didn\u0027t get that. Can you repeat?"
+          ],
+          "condition": ""
+        },
+        {
+          "type": "4",
+          "title": "",
+          "payload": {
+            "fulfillmentMessages": [
+              {
+                "payload": {
+                  "richContent": [
+                    [
+                      {
+                        "text": [
+                          "I\u0027m sorry, I didn\u0027t understand that. How can I assist you?"
+                        ],
+                        "type": "text"
+                      },
+                      {
+                        "text": "Give me motivation",
+                        "link": "https://zenquotes.io/api/random",
+                        "type": "button"
+                      },
+                      {
+                        "text": "Tell me a joke",
+                        "type": "button",
+                        "link": "https://v2.jokeapi.dev/joke/Any"
+                      },
+                      {
+                        "text": "Talk to someone",
+                        "type": "button",
+                        "link": "https://www.mentalhealth.gov/get-help"
+                      }
+                    ]
+                  ]
+                }
+              }
+            ]
+          },
+          "textToSpeech": "",
+          "lang": "en",
+          "condition": ""
+        }
+      ],
+      "speech": []
+    }
+  ],
+  "priority": 500000,
+  "webhookUsed": false,
+  "webhookForSlotFilling": false,
+  "fallbackIntent": true,
+  "events": [],
+  "conditionalResponses": [],
+  "condition": "",
+  "conditionalFollowupEvents": []
+}

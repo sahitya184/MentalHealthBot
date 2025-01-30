@@ -1,0 +1,128 @@
+{
+  "id": "546074cf-e9ad-4179-820c-64e7d1e27ce2",
+  "name": "Default Welcome Intent",
+  "auto": true,
+  "contexts": [],
+  "responses": [
+    {
+      "resetContexts": false,
+      "action": "input.welcome",
+      "affectedContexts": [
+        {
+          "name": "welcome_followup",
+          "lifespan": 5
+        }
+      ],
+      "parameters": [],
+      "messages": [
+        {
+          "type": "4",
+          "title": "",
+          "payload": {
+            "fulfillmentMessages": [
+              {
+                "payload": {
+                  "richContent": [
+                    [
+                      {
+                        "text": [
+                          "Hello there! 👋 Welcome to your safe space. I’m here to help you feel supported, uplifted, and ready to take on anything. 🌈\n\nWhat would you like to explore right now?\n- 💪 Get Motivation\n- 😊 Cheer Up\n- 🌱 Coping Strategies\n\nJust let me know, and we’ll get started!"
+                        ],
+                        "type": "text"
+                      },
+                      {
+                        "type": "button",
+                        "link": "https://zenquotes.io/api/random",
+                        "text": "I need some motivation"
+                      },
+                      {
+                        "link": "https://v2.jokeapi.dev/joke/Any",
+                        "type": "button",
+                        "text": "Tell me a joke"
+                      },
+                      {
+                        "type": "button",
+                        "text": "I need help",
+                        "link": "https://www.mentalhealth.gov"
+                      },
+                      {
+                        "type": "divider"
+                      },
+                      {
+                        "type": "text",
+                        "text": [
+                          "What would you like to explore today?"
+                        ]
+                      },
+                      {
+                        "text": "💪 Get Motivation",
+                        "type": "button",
+                        "link": "https://zenquotes.io/api/random"
+                      },
+                      {
+                        "link": "https://v2.jokeapi.dev/joke/Any",
+                        "text": "😊 Cheer Up",
+                        "type": "button"
+                      },
+                      {
+                        "text": "🌱 Coping Strategies",
+                        "link": "https://www.mentalhealth.gov",
+                        "type": "button"
+                      }
+                    ]
+                  ]
+                }
+              },
+              {
+                "payload": {
+                  "text": "Hello there! 👋 Welcome to your safe space. I’m here to help you feel supported, uplifted, and ready to take on anything. 🌈\n\nWhat would you like to explore right now?\n- 💪 Get Motivation\n- 😊 Cheer Up\n- 🌱 Coping Strategies\n\nJust let me know, and we’ll get started!",
+                  "reply_markup": {
+                    "keyboard": [
+                      [
+                        "💪 Get Motivation"
+                      ],
+                      [
+                        "😊 Cheer Up"
+                      ],
+                      [
+                        "🌱 Coping Strategies"
+                      ]
+                    ],
+                    "resize_keyboard": true,
+                    "one_time_keyboard": true
+                  }
+                }
+              }
+            ]
+          },
+          "textToSpeech": "",
+          "lang": "en",
+          "condition": ""
+        },
+        {
+          "type": "0",
+          "title": "",
+          "textToSpeech": "",
+          "lang": "en",
+          "speech": [
+            "Hello there! 👋 Welcome to your safe space. I’m here to help you feel supported, uplifted, and ready to take on anything. 🌈 \n\nWhat would you like to explore right now?  \n- 💪 Get Motivation  \n- 😊 Cheer Up  \n- 🌱 Coping Strategies  \n\nJust let me know, and we’ll get started!"
+          ],
+          "condition": ""
+        }
+      ],
+      "speech": []
+    }
+  ],
+  "priority": 500000,
+  "webhookUsed": false,
+  "webhookForSlotFilling": false,
+  "fallbackIntent": false,
+  "events": [
+    {
+      "name": "WELCOME"
+    }
+  ],
+  "conditionalResponses": [],
+  "condition": "",
+  "conditionalFollowupEvents": []
+}

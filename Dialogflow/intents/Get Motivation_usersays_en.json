@@ -1,0 +1,158 @@
+[
+  {
+    "id": "2879a024-75d4-4f1d-8f7d-451ae949d990",
+    "data": [
+      {
+        "text": "I need a quote",
+        "userDefined": false
+      }
+    ],
+    "isTemplate": false,
+    "count": 0,
+    "lang": "en",
+    "updated": 0
+  },
+  {
+    "id": "70ea5841-99a6-49f8-b8a8-beb0c55c0db2",
+    "data": [
+      {
+        "text": "Tell me something positive",
+        "userDefined": false
+      }
+    ],
+    "isTemplate": false,
+    "count": 0,
+    "lang": "en",
+    "updated": 0
+  },
+  {
+    "id": "1804d435-f2e0-4dab-bb48-b10235f1edb4",
+    "data": [
+      {
+        "text": "I\u0027m feeling down, help me",
+        "userDefined": false
+      }
+    ],
+    "isTemplate": false,
+    "count": 0,
+    "lang": "en",
+    "updated": 0
+  },
+  {
+    "id": "b5bfe68b-1912-4716-b59c-d36cbfce5c79",
+    "data": [
+      {
+        "text": "Can you give me a motivational quote?",
+        "userDefined": false
+      }
+    ],
+    "isTemplate": false,
+    "count": 0,
+    "lang": "en",
+    "updated": 0
+  },
+  {
+    "id": "d2e33f1e-45c3-42ce-83d6-b71bcd365fe0",
+    "data": [
+      {
+        "text": "I need a boost",
+        "userDefined": false
+      }
+    ],
+    "isTemplate": false,
+    "count": 0,
+    "lang": "en",
+    "updated": 0
+  },
+  {
+    "id": "3dc22984-3fdc-4920-9cf4-ab030364efcd",
+    "data": [
+      {
+        "text": "I need some positivity",
+        "userDefined": false
+      }
+    ],
+    "isTemplate": false,
+    "count": 0,
+    "lang": "en",
+    "updated": 0
+  },
+  {
+    "id": "72f128ba-57f4-4ebb-93f8-42006bc8edb0",
+    "data": [
+      {
+        "text": "Can you encourage me?",
+        "userDefined": false
+      }
+    ],
+    "isTemplate": false,
+    "count": 0,
+    "lang": "en",
+    "updated": 0
+  },
+  {
+    "id": "c16a4348-3805-4668-81c3-7616b7bb3280",
+    "data": [
+      {
+        "text": "I feel low, motivate me",
+        "userDefined": false
+      }
+    ],
+    "isTemplate": false,
+    "count": 0,
+    "lang": "en",
+    "updated": 0
+  },
+  {
+    "id": "03a9c5e6-4496-43dc-8047-834b20390d2b",
+    "data": [
+      {
+        "text": "Give me some inspiration",
+        "userDefined": false
+      }
+    ],
+    "isTemplate": false,
+    "count": 0,
+    "lang": "en",
+    "updated": 0
+  },
+  {
+    "id": "07046659-115f-4415-bf8e-e1f6122776dc",
+    "data": [
+      {
+        "text": "I\u0027m feeling low.",
+        "userDefined": false
+      }
+    ],
+    "isTemplate": false,
+    "count": 0,
+    "lang": "en",
+    "updated": 0
+  },
+  {
+    "id": "5cb1afcd-a634-409b-aa3a-d0c70eec2ca6",
+    "data": [
+      {
+        "text": "Give me a quote.",
+        "userDefined": false
+      }
+    ],
+    "isTemplate": false,
+    "count": 0,
+    "lang": "en",
+    "updated": 0
+  },
+  {
+    "id": "22b593dd-0587-4fbe-a7ab-24eea868936a",
+    "data": [
+      {
+        "text": "I need motivation",
+        "userDefined": false
+      }
+    ],
+    "isTemplate": false,
+    "count": 0,
+    "lang": "en",
+    "updated": 0
+  }
+]

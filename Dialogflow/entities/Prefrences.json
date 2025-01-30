@@ -1,0 +1,9 @@
+{
+  "id": "3dcd2290-c04f-4519-8ec8-65e8af0f5a0c",
+  "name": "Prefrences",
+  "isOverridable": true,
+  "isEnum": false,
+  "isRegexp": false,
+  "automatedExpansion": false,
+  "allowFuzzyExtraction": false
+}

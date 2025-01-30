@@ -1,0 +1,32 @@
+[
+  {
+    "value": "cooking",
+    "synonyms": [
+      "cooking"
+    ]
+  },
+  {
+    "value": "listening music",
+    "synonyms": [
+      "listening music"
+    ]
+  },
+  {
+    "value": "swimming",
+    "synonyms": [
+      "swimming"
+    ]
+  },
+  {
+    "value": "playing",
+    "synonyms": [
+      "playing cricket"
+    ]
+  },
+  {
+    "value": "reading books",
+    "synonyms": [
+      "reading books"
+    ]
+  }
+]

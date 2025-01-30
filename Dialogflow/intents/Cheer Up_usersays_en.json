@@ -1,0 +1,145 @@
+[
+  {
+    "id": "df51a22e-2b5e-495a-af29-0a0a48401572",
+    "data": [
+      {
+        "text": "Joke please",
+        "userDefined": false
+      }
+    ],
+    "isTemplate": false,
+    "count": 0,
+    "lang": "en",
+    "updated": 0
+  },
+  {
+    "id": "e40d0e67-5930-4120-be33-ddf2cde1ad71",
+    "data": [
+      {
+        "text": "Give me a funny joke",
+        "userDefined": false
+      }
+    ],
+    "isTemplate": false,
+    "count": 0,
+    "lang": "en",
+    "updated": 0
+  },
+  {
+    "id": "c413797b-6749-4520-9c27-20e969081d45",
+    "data": [
+      {
+        "text": "Tell me something funny",
+        "userDefined": false
+      }
+    ],
+    "isTemplate": false,
+    "count": 0,
+    "lang": "en",
+    "updated": 0
+  },
+  {
+    "id": "f7171734-5581-4bd0-88cf-4337f787e632",
+    "data": [
+      {
+        "text": "I\u0027m feeling down, tell a joke",
+        "userDefined": false
+      }
+    ],
+    "isTemplate": false,
+    "count": 0,
+    "lang": "en",
+    "updated": 0
+  },
+  {
+    "id": "3cb056df-2102-4219-baba-55e2c89d625f",
+    "data": [
+      {
+        "text": "Cheer me up with a joke",
+        "userDefined": false
+      }
+    ],
+    "isTemplate": false,
+    "count": 0,
+    "lang": "en",
+    "updated": 0
+  },
+  {
+    "id": "b0df52df-7527-4691-9c92-de967e43f96e",
+    "data": [
+      {
+        "text": "I want to hear a joke",
+        "userDefined": false
+      }
+    ],
+    "isTemplate": false,
+    "count": 1,
+    "lang": "en",
+    "updated": 0
+  },
+  {
+    "id": "94a170e8-fb13-4517-aa0c-427b788ef2ce",
+    "data": [
+      {
+        "text": "Can you make me laugh?",
+        "userDefined": false
+      }
+    ],
+    "isTemplate": false,
+    "count": 0,
+    "lang": "en",
+    "updated": 0
+  },
+  {
+    "id": "4283b1e3-7767-4b2d-8a43-145847530f62",
+    "data": [
+      {
+        "text": "I need a laugh",
+        "userDefined": false
+      }
+    ],
+    "isTemplate": false,
+    "count": 0,
+    "lang": "en",
+    "updated": 0
+  },
+  {
+    "id": "64215fa5-5e57-4102-ab19-779d745680a9",
+    "data": [
+      {
+        "text": "Cheer me up.",
+        "userDefined": false
+      }
+    ],
+    "isTemplate": false,
+    "count": 0,
+    "lang": "en",
+    "updated": 0
+  },
+  {
+    "id": "942a81c8-2f1c-4589-9ba3-c0d06b5d540c",
+    "data": [
+      {
+        "text": "Make me laugh.",
+        "userDefined": false
+      }
+    ],
+    "isTemplate": false,
+    "count": 0,
+    "lang": "en",
+    "updated": 0
+  },
+  {
+    "id": "7f6824c6-f913-422b-b9cc-95569bf2ac3c",
+    "data": [
+      {
+        "text": "Tell me a joke.",
+        "userDefined": false
+      }
+    ],
+    "isTemplate": false,
+    "count": 0,
+    "lang": "en",
+    "updated": 0
+  }
+]
