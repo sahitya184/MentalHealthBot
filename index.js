@@ -12,17 +12,15 @@ app.post("/webhook", async (req, res) => {
     const callbackData = req.body.originalDetectIntentRequest?.payload?.data?.callback_query?.data || queryText;
 
     try {
-        res.setHeader("Content-Type", "application/json"); // Ensure proper content type
+        res.setHeader("Content-Type", "application/json");
 
-        console.log("Received Intent:", intentName);
-        console.log("Callback Data:", callbackData);
-
-        // 🏡 Welcome Intent
+        // Welcome Intent
         if (intentName === "Welcome Intent") {
             return res.json({
                 fulfillmentMessages: [
                     { text: { text: ["Hello there! 👋 Welcome to your safe space. 🌈\n\nI’m here to support you. What would you like to explore?"] } },
                     {
+                        platform: "TELEGRAM",
                         payload: {
                             telegram: {
                                 text: "Choose an option:",
@@ -30,28 +28,29 @@ app.post("/webhook", async (req, res) => {
                                     inline_keyboard: [
                                         [{ text: "💪 Get Motivation", callback_data: "Get Motivation" }],
                                         [{ text: "😊 Cheer Up", callback_data: "Cheer Up" }],
-                                        [{ text: "🌱 Coping Strategies", callback_data: "Coping Strategies" }]
-                                    ]
-                                }
-                            }
-                        }
+                                        [{ text: "🌱 Coping Strategies", callback_data: "Coping Strategies" }],
+                                    ],
+                                },
+                            },
+                        },
                     },
                     {
+                        platform: "PLATFORM_UNSPECIFIED",
                         payload: {
                             richContent: [
                                 [
-                                    { type: "suggestion", text: "💪 Get Motivation" },
-                                    { type: "suggestion", text: "😊 Cheer Up" },
-                                    { type: "suggestion", text: "🌱 Coping Strategies" }
+                                    { "type": "button", "text": "💪 Get Motivation", "event": { "name": "Get Motivation" } },
+                                    { "type": "button", "text": "😊 Cheer Up", "event": { "name": "Cheer Up" } },
+                                    { "type": "button", "text": "🌱 Coping Strategies", "event": { "name": "Coping Strategies" } }
                                 ]
                             ]
                         }
                     }
-                ]
+                ],
             });
         }
 
-        // 💪 Get Motivation Intent
+        // Get Motivation
         if (intentName === "Get Motivation" || callbackData === "Get Motivation") {
             try {
                 const response = await axios.get("https://zenquotes.io/api/random");
@@ -63,21 +62,25 @@ app.post("/webhook", async (req, res) => {
                     fulfillmentMessages: [
                         { text: { text: [`"${quote}" – ${author}`] } },
                         {
+                            platform: "TELEGRAM",
                             payload: {
                                 telegram: {
                                     text: "Would you like another quote?",
                                     reply_markup: {
-                                        inline_keyboard: [[{ text: "🔄 Another Quote", callback_data: "Get Motivation" }]]
-                                    }
-                                }
-                            }
+                                        inline_keyboard: [[{ text: "🔄 Another Quote", callback_data: "Get Motivation" }]],
+                                    },
+                                },
+                            },
                         },
                         {
+                            platform: "PLATFORM_UNSPECIFIED",
                             payload: {
-                                richContent: [[{ type: "suggestion", text: "🔄 Another Quote" }]]
+                                richContent: [
+                                    [{ "type": "button", "text": "🔄 Another Quote", "event": { "name": "Get Motivation" } }]
+                                ]
                             }
                         }
-                    ]
+                    ],
                 });
             } catch (error) {
                 console.error("Error fetching motivation quote:", error);
@@ -85,12 +88,13 @@ app.post("/webhook", async (req, res) => {
             }
         }
 
-        // 😊 Cheer Up (Jokes)
+        // Cheer Up
         if (intentName === "Cheer Up" || callbackData === "Cheer Up") {
             return res.json({
                 fulfillmentMessages: [
                     { text: { text: ["I’d love to make you smile! 😊 What kind of joke would you like?"] } },
                     {
+                        platform: "TELEGRAM",
                         payload: {
                             telegram: {
                                 text: "Choose a joke type:",
@@ -98,72 +102,35 @@ app.post("/webhook", async (req, res) => {
                                     inline_keyboard: [
                                         [{ text: "🤣 Random", callback_data: "Random Joke" }],
                                         [{ text: "😂 Pun", callback_data: "Pun" }],
-                                        [{ text: "🤭 Knock-Knock", callback_data: "Knock-Knock" }]
-                                    ]
-                                }
-                            }
-                        }
+                                        [{ text: "🤭 Knock-Knock", callback_data: "Knock-Knock" }],
+                                    ],
+                                },
+                            },
+                        },
                     },
                     {
+                        platform: "PLATFORM_UNSPECIFIED",
                         payload: {
                             richContent: [
                                 [
-                                    { type: "suggestion", text: "🤣 Random" },
-                                    { type: "suggestion", text: "😂 Pun" },
-                                    { type: "suggestion", text: "🤭 Knock-Knock" }
+                                    { "type": "button", "text": "🤣 Random", "event": { "name": "Random Joke" } },
+                                    { "type": "button", "text": "😂 Pun", "event": { "name": "Pun" } },
+                                    { "type": "button", "text": "🤭 Knock-Knock", "event": { "name": "Knock-Knock" } }
                                 ]
                             ]
                         }
                     }
-                ]
+                ],
             });
         }
 
-        // 🎭 Joke Type Selection
-        if (["Random Joke", "Pun", "Knock-Knock"].includes(callbackData)) {
-            let jokeResponse;
-            try {
-                if (callbackData === "Pun") {
-                    jokeResponse = "I’m reading a book on anti-gravity… It’s impossible to put down! 😂";
-                } else if (callbackData === "Knock-Knock") {
-                    jokeResponse = "Knock, knock. \nWho's there? \nOlive. \nOlive who? \nOlive you and I miss you! ❤️";
-                } else {
-                    const jokeAPI = await axios.get("https://official-joke-api.appspot.com/jokes/random");
-                    jokeResponse = `${jokeAPI.data.setup} ... ${jokeAPI.data.punchline}`;
-                }
-
-                return res.json({
-                    fulfillmentMessages: [
-                        { text: { text: [jokeResponse] } },
-                        {
-                            payload: {
-                                telegram: {
-                                    text: "Want another joke?",
-                                    reply_markup: {
-                                        inline_keyboard: [[{ text: "😂 Another One", callback_data: "Cheer Up" }]]
-                                    }
-                                }
-                            }
-                        },
-                        {
-                            payload: {
-                                richContent: [[{ type: "suggestion", text: "😂 Another One" }]]
-                            }
-                        }
-                    ]
-                });
-            } catch (error) {
-                console.error("Error fetching joke:", error);
-                return res.json({ fulfillmentMessages: [{ text: { text: ["Oops! I couldn't fetch a joke, but I'm still here to cheer you up! 😊"] } }] });
-            }
-        }
-
-        // 🌱 Coping Strategies
+        // Coping Strategies
         if (intentName === "Coping Strategies" || callbackData === "Coping Strategies") {
             return res.json({
                 fulfillmentMessages: [
                     { text: { text: ["Here are some ways to cope with stress. Which one would you like to try?"] } },
                     {
+                        platform: "TELEGRAM",
                         payload: {
                             telegram: {
                                 text: "Select a coping strategy:",
@@ -171,24 +138,25 @@ app.post("/webhook", async (req, res) => {
                                     inline_keyboard: [
                                         [{ text: "🧘 Deep Breathing", callback_data: "Deep Breathing" }],
                                         [{ text: "✍️ Journaling", callback_data: "Journaling" }],
-                                        [{ text: "🎵 Listen to Music", callback_data: "Listen to Music" }]
-                                    ]
-                                }
-                            }
-                        }
+                                        [{ text: "🎵 Listen to Music", callback_data: "Listen to Music" }],
+                                    ],
+                                },
+                            },
+                        },
                     },
                     {
+                        platform: "PLATFORM_UNSPECIFIED",
                         payload: {
                             richContent: [
                                 [
-                                    { type: "suggestion", text: "🧘 Deep Breathing" },
-                                    { type: "suggestion", text: "✍️ Journaling" },
-                                    { type: "suggestion", text: "🎵 Listen to Music" }
+                                    { "type": "button", "text": "🧘 Deep Breathing", "event": { "name": "Deep Breathing" } },
+                                    { "type": "button", "text": "✍️ Journaling", "event": { "name": "Journaling" } },
+                                    { "type": "button", "text": "🎵 Listen to Music", "event": { "name": "Listen to Music" } }
                                 ]
                             ]
                         }
                     }
-                ]
+                ],
             });
         }
 
