@@ -30,7 +30,7 @@ app.post("/webhook", async (req, res) => {
                                         [{ text: "💪 Get Motivation", callback_data: "Get Motivation" }],
                                         [{ text: "😊 Cheer Up", callback_data: "Cheer Up" }],
                                         [{ text: "🌱 Coping Strategies", callback_data: "Coping Strategies" }],
-                                        [{ text: "❌ End Chat", callback_data: "End Chat" }]
+                                        //[{ text: "❌ End Chat", callback_data: "End Chat" }]
                                     ]
                                 },
                             },
@@ -59,7 +59,7 @@ app.post("/webhook", async (req, res) => {
                                     reply_markup: {
                                         inline_keyboard: [
                                             [{ text: "🔄 Get Another", callback_data: "Get Motivation" }],
-                                            [{ text: "❌ End Chat", callback_data: "End Chat" }]
+                                            //[{ text: "❌ End Chat", callback_data: "End Chat" }]
                                         ]
                                     },
                                 },
@@ -90,7 +90,7 @@ app.post("/webhook", async (req, res) => {
                                     reply_markup: {
                                         inline_keyboard: [
                                             [{ text: "🤣 Another One!", callback_data: "Cheer Up" }],
-                                            [{ text: "❌ End Chat", callback_data: "End Chat" }]
+                                            //[{ text: "❌ End Chat", callback_data: "End Chat" }]
                                         ]
                                     },
                                 },
@@ -129,7 +129,7 @@ app.post("/webhook", async (req, res) => {
                                 reply_markup: {
                                     inline_keyboard: [
                                         [{ text: "🌱 Another Tip", callback_data: "Coping Strategies" }],
-                                        [{ text: "❌ End Chat", callback_data: "End Chat" }]
+                                        //[{ text: "❌ End Chat", callback_data: "End Chat" }]
                                     ]
                                 },
                             },
@@ -140,7 +140,7 @@ app.post("/webhook", async (req, res) => {
         }
 
         // Back to Menu (Modified: Now Shows Restart Instructions)
-        if (callbackData === "Back to Menu") {
+        /*if (callbackData === "Back to Menu") {
             return res.json({
                 fulfillmentMessages: [
                     { text: { text: ["If you'd like to start over, just type *'start'* in the chat! 😊"] } },
@@ -171,7 +171,7 @@ app.post("/webhook", async (req, res) => {
                     }
                 ],
             });
-        }
+        }*/
 
         return res.json({ fulfillmentMessages: [{ text: { text: ["I'm here for you. Let me know how I can help! 💙"] } }] });
 
