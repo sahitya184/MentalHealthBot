@@ -160,6 +160,14 @@ app.post("/webhook", async (req, res) => {
                                 },
                             },
                         },
+                    },
+                    {
+                        platform: "PLATFORM_UNSPECIFIED",
+                        payload: {
+                            richContent: [
+                                [{ type: "chips", options: [{ text: "🧘 Deep Breathing" }, { text: "✍️ Journaling" }, { text: "🎵 Listen to Music" }] }]
+                            ]
+                        }
                     }
                 ],
             });
