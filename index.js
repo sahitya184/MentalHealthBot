@@ -1,6 +1,5 @@
 const express = require("express");
 const bodyParser = require("body-parser");
-const fetch = require("node-fetch");
 const axios = require("axios");
 
 const app = express();
@@ -9,9 +8,12 @@ app.use(bodyParser.json());
 app.post("/webhook", async (req, res) => {
     const intentName = req.body.queryResult.intent.displayName;
     const parameters = req.body.queryResult.parameters;
-    const callbackData = req.body.originalDetectIntentRequest?.payload?.data?.callback_query?.data || "";
+    const queryText = req.body.queryResult.queryText || "";
+    const callbackData = req.body.originalDetectIntentRequest?.payload?.data?.callback_query?.data || queryText;
 
     try {
+        res.setHeader("Content-Type", "application/json"); // Ensure proper content type
+
         // Welcome Intent
         if (intentName === "Welcome Intent") {
             return res.json({
@@ -46,33 +48,38 @@ app.post("/webhook", async (req, res) => {
 
         // Get Motivation (Including "Another Quote")
         if (intentName === "Get Motivation" || callbackData === "Get Motivation") {
-            const response = await fetch("https://zenquotes.io/api/random");
-            const data = await response.json();
-            const quote = data[0]?.q || "Stay strong, you're doing great! 💪";
-            const author = data[0]?.a || "Unknown";
+            try {
+                const response = await axios.get("https://zenquotes.io/api/random");
+                const data = response.data;
+                const quote = data[0]?.q || "Stay strong, you're doing great! 💪";
+                const author = data[0]?.a || "Unknown";
 
-            return res.json({
-                fulfillmentMessages: [
-                    { text: { text: [`"${quote}" – ${author}`] } },
-                    {
-                        platform: "TELEGRAM",
-                        payload: {
-                            telegram: {
-                                text: "Would you like another quote?",
-                                reply_markup: {
-                                    inline_keyboard: [[{ text: "🔄 Another Quote", callback_data: "Get Motivation" }]],
+                return res.json({
+                    fulfillmentMessages: [
+                        { text: { text: [`"${quote}" – ${author}`] } },
+                        {
+                            platform: "TELEGRAM",
+                            payload: {
+                                telegram: {
+                                    text: "Would you like another quote?",
+                                    reply_markup: {
+                                        inline_keyboard: [[{ text: "🔄 Another Quote", callback_data: "Get Motivation" }]],
+                                    },
                                 },
                             },
                         },
-                    },
-                    {
-                        platform: "PLATFORM_UNSPECIFIED",
-                        payload: {
-                            richContent: [[{ type: "chips", options: [{ text: "🔄 Another Quote" }] }]]
+                        {
+                            platform: "PLATFORM_UNSPECIFIED",
+                            payload: {
+                                richContent: [[{ type: "chips", options: [{ text: "🔄 Another Quote" }] }]]
+                            }
                         }
-                    }
-                ],
-            });
+                    ],
+                });
+            } catch (error) {
+                console.error("Error fetching motivation quote:", error);
+                return res.json({ fulfillmentMessages: [{ text: { text: ["Keep pushing forward! You're doing amazing. 💪"] } }] });
+            }
         }
 
         // Cheer Up (Jokes)
@@ -108,37 +115,42 @@ app.post("/webhook", async (req, res) => {
         // Cheer Up - Type (Joke Selection)
         if (["Random Joke", "Pun", "Knock-Knock"].includes(callbackData)) {
             let jokeResponse;
-            if (callbackData === "Pun") {
-                jokeResponse = "I’m reading a book on anti-gravity… It’s impossible to put down! 😂";
-            } else if (callbackData === "Knock-Knock") {
-                jokeResponse = "Knock, knock. \nWho's there? \nOlive. \nOlive who? \nOlive you and I miss you! ❤️";
-            } else {
-                const jokeAPI = await axios.get("https://official-joke-api.appspot.com/jokes/random");
-                jokeResponse = `${jokeAPI.data.setup} ... ${jokeAPI.data.punchline}`;
-            }
+            try {
+                if (callbackData === "Pun") {
+                    jokeResponse = "I’m reading a book on anti-gravity… It’s impossible to put down! 😂";
+                } else if (callbackData === "Knock-Knock") {
+                    jokeResponse = "Knock, knock. \nWho's there? \nOlive. \nOlive who? \nOlive you and I miss you! ❤️";
+                } else {
+                    const jokeAPI = await axios.get("https://official-joke-api.appspot.com/jokes/random");
+                    jokeResponse = `${jokeAPI.data.setup} ... ${jokeAPI.data.punchline}`;
+                }
 
-            return res.json({
-                fulfillmentMessages: [
-                    { text: { text: [jokeResponse] } },
-                    {
-                        platform: "TELEGRAM",
-                        payload: {
-                            telegram: {
-                                text: "Want another joke?",
-                                reply_markup: {
-                                    inline_keyboard: [[{ text: "😂 Another One", callback_data: "Cheer Up" }]],
+                return res.json({
+                    fulfillmentMessages: [
+                        { text: { text: [jokeResponse] } },
+                        {
+                            platform: "TELEGRAM",
+                            payload: {
+                                telegram: {
+                                    text: "Want another joke?",
+                                    reply_markup: {
+                                        inline_keyboard: [[{ text: "😂 Another One", callback_data: "Cheer Up" }]],
+                                    },
                                 },
                             },
                         },
-                    },
-                    {
-                        platform: "PLATFORM_UNSPECIFIED",
-                        payload: {
-                            richContent: [[{ type: "chips", options: [{ text: "😂 Another One" }] }]]
+                        {
+                            platform: "PLATFORM_UNSPECIFIED",
+                            payload: {
+                                richContent: [[{ type: "chips", options: [{ text: "😂 Another One" }] }]]
+                            }
                         }
-                    }
-                ],
-            });
+                    ],
+                });
+            } catch (error) {
+                console.error("Error fetching joke:", error);
+                return res.json({ fulfillmentMessages: [{ text: { text: ["Oops! I couldn't fetch a joke, but I'm still here to cheer you up! 😊"] } }] });
+            }
         }
 
         // Coping Strategies
@@ -199,7 +211,8 @@ app.post("/webhook", async (req, res) => {
             });
         }
 
-        return res.json({ fulfillmentMessages: [{ text: { text: ["I didn’t quite get that. Can you try again?"] } }] });
+        return res.json({ fulfillmentMessages: [{ text: { text: ["I’m here to help! Try saying 'Get Motivation', 'Cheer Up', or 'Coping Strategies'. 😊"] } }] });
+
     } catch (error) {
         console.error("Error:", error);
         return res.json({ fulfillmentMessages: [{ text: { text: ["Oops! Something went wrong."] } }] });
