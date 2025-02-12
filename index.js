@@ -36,6 +36,29 @@ app.post("/webhook", async (req, res) => {
                             },
                         },
                     },
+                    {
+                        payload: {
+                            richContent: [
+                                [
+                                    {
+                                        "type": "button",
+                                        "text": "💪 Get Motivation",
+                                        "event": { "name": "Get Motivation", "languageCode": "en" }
+                                    },
+                                    {
+                                        "type": "button",
+                                        "text": "😊 Cheer Up",
+                                        "event": { "name": "Cheer Up", "languageCode": "en" }
+                                    },
+                                    {
+                                        "type": "button",
+                                        "text": "🌱 Coping Strategies",
+                                        "event": { "name": "Coping Strategies", "languageCode": "en" }
+                                    }
+                                ]
+                            ]
+                        }
+                    }
                 ],
             });
         }
@@ -70,6 +93,19 @@ app.post("/webhook", async (req, res) => {
                                 },
                             },
                         },
+                        {
+                            payload: {
+                                richContent: [
+                                    [
+                                        {
+                                            "type": "button",
+                                            "text": "🔄 Another Quote",
+                                            "event": { "name": "Get Motivation", "languageCode": "en" }
+                                        }
+                                    ]
+                                ]
+                            }
+                        }
                     ],
                 });
             } catch (error) {
@@ -106,53 +142,31 @@ app.post("/webhook", async (req, res) => {
                             },
                         },
                     },
+                    {
+                        payload: {
+                            richContent: [
+                                [
+                                    {
+                                        "type": "button",
+                                        "text": "🤣 Random",
+                                        "event": { "name": "Random Joke", "languageCode": "en" }
+                                    },
+                                    {
+                                        "type": "button",
+                                        "text": "😂 Pun",
+                                        "event": { "name": "Pun", "languageCode": "en" }
+                                    },
+                                    {
+                                        "type": "button",
+                                        "text": "🤭 Knock-Knock",
+                                        "event": { "name": "Knock-Knock", "languageCode": "en" }
+                                    }
+                                ]
+                            ]
+                        }
+                    }
                 ],
             });
-        }
-
-        // Cheer Up - Joke Type Selection
-        if (intentName === "cheer up - type") {
-            const jokeType = req.body.queryResult.parameters.joke_type || "Random";
-            console.log(`Fetching joke of type: ${jokeType}`);
-
-            try {
-                let jokeResponse;
-                if (jokeType === "Pun") {
-                    jokeResponse = "I’m reading a book on anti-gravity… It’s impossible to put down! 😂";
-                } else if (jokeType === "Knock-Knock") {
-                    jokeResponse = "Knock, knock. \nWho's there? \nOlive. \nOlive who? \nOlive you and I miss you! ❤️";
-                } else {
-                    const jokeAPI = await axios.get("https://official-joke-api.appspot.com/jokes/random", { timeout: 4000 });
-                    jokeResponse = `${jokeAPI.data.setup} ... ${jokeAPI.data.punchline}`;
-                }
-
-                return res.json({
-                    fulfillmentMessages: [
-                        {
-                            text: { text: [jokeResponse] },
-                        },
-                        {
-                            payload: {
-                                telegram: {
-                                    text: "Want another joke?",
-                                    reply_markup: {
-                                        inline_keyboard: [
-                                            [{ text: "😂 Another One", callback_data: "Cheer Up" }],
-                                        ],
-                                    },
-                                },
-                            },
-                        },
-                    ],
-                });
-            } catch (error) {
-                console.error("Error fetching joke:", error.message);
-                return res.json({
-                    fulfillmentMessages: [
-                        { text: { text: ["Oops! Couldn't fetch a joke right now. Try again later!"] } },
-                    ],
-                });
-            }
         }
 
         // Coping Strategies
@@ -179,6 +193,29 @@ app.post("/webhook", async (req, res) => {
                             },
                         },
                     },
+                    {
+                        payload: {
+                            richContent: [
+                                [
+                                    {
+                                        "type": "button",
+                                        "text": "🧘 Mindfulness",
+                                        "event": { "name": "Mindfulness", "languageCode": "en" }
+                                    },
+                                    {
+                                        "type": "button",
+                                        "text": "🏃 Exercise",
+                                        "event": { "name": "Exercise", "languageCode": "en" }
+                                    },
+                                    {
+                                        "type": "button",
+                                        "text": "📖 Journaling",
+                                        "event": { "name": "Journaling", "languageCode": "en" }
+                                    }
+                                ]
+                            ]
+                        }
+                    }
                 ],
             });
         }
