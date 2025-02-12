@@ -9,16 +9,18 @@ app.use(bodyParser.json());
 app.post("/webhook", async (req, res) => {
     const intentName = req.body.queryResult.intent.displayName;
     const parameters = req.body.queryResult.parameters;
-    const callbackData = req.body.originalDetectIntentRequest?.payload?.data?.callback_query?.data || "";
+    const callbackData = req.body.originalDetectIntentRequest?.payload?.data?.callback_query?.data;
+
+    console.log("Intent:", intentName);
+    console.log("Callback Data:", callbackData);
 
     try {
-        // Welcome Intent
+        // Welcome Intent - Provides buttons
         if (intentName === "Welcome Intent") {
             return res.json({
                 fulfillmentMessages: [
-                    { text: { text: ["Hello there! 👋 Welcome to your safe space. 🌈\n\nI’m here to support you. What would you like to explore?"] } },
+                    { text: { text: ["Hello there! 👋 Welcome to your safe space. 🌈\n\nWhat would you like to explore?"] } },
                     {
-                        platform: "TELEGRAM",
                         payload: {
                             telegram: {
                                 text: "Choose an option:",
@@ -32,28 +34,11 @@ app.post("/webhook", async (req, res) => {
                             },
                         },
                     },
-                    {
-                        platform: "PLATFORM_UNSPECIFIED",
-                        payload: {
-                            richContent: [
-                                [
-                                    {
-                                        type: "chips",
-                                        options: [
-                                            { text: "💪 Get Motivation" },
-                                            { text: "😊 Cheer Up" },
-                                            { text: "🌱 Coping Strategies" }
-                                        ]
-                                    }
-                                ]
-                            ]
-                        }
-                    }
                 ],
             });
         }
 
-        // Get Motivation
+        // Get Motivation - Fetches a new quote every time
         if (intentName === "Get Motivation" || callbackData === "Get Motivation") {
             const response = await fetch("https://zenquotes.io/api/random");
             const data = await response.json();
@@ -64,7 +49,6 @@ app.post("/webhook", async (req, res) => {
                 fulfillmentMessages: [
                     { text: { text: [`"${quote}" – ${author}`] } },
                     {
-                        platform: "TELEGRAM",
                         payload: {
                             telegram: {
                                 text: "Would you like another quote?",
@@ -74,30 +58,16 @@ app.post("/webhook", async (req, res) => {
                             },
                         },
                     },
-                    {
-                        platform: "PLATFORM_UNSPECIFIED",
-                        payload: {
-                            richContent: [
-                                [
-                                    {
-                                        type: "chips",
-                                        options: [{ text: "🔄 Another Quote" }]
-                                    }
-                                ]
-                            ]
-                        }
-                    }
                 ],
             });
         }
 
-        // Cheer Up (Jokes)
+        // Cheer Up - Gives joke type options
         if (intentName === "Cheer Up" || callbackData === "Cheer Up") {
             return res.json({
                 fulfillmentMessages: [
                     { text: { text: ["I’d love to make you smile! 😊 What kind of joke would you like?"] } },
                     {
-                        platform: "TELEGRAM",
                         payload: {
                             telegram: {
                                 text: "Choose a joke type:",
@@ -111,30 +81,14 @@ app.post("/webhook", async (req, res) => {
                             },
                         },
                     },
-                    {
-                        platform: "PLATFORM_UNSPECIFIED",
-                        payload: {
-                            richContent: [
-                                [
-                                    {
-                                        type: "chips",
-                                        options: [
-                                            { text: "🤣 Random" },
-                                            { text: "😂 Pun" },
-                                            { text: "🤭 Knock-Knock" }
-                                        ]
-                                    }
-                                ]
-                            ]
-                        }
-                    }
                 ],
             });
         }
 
-        // Cheer Up - Type (Joke Selection)
-        if (intentName === "cheer up - type" || ["Random Joke", "Pun", "Knock-Knock"].includes(callbackData)) {
+        // Cheer Up - Joke Selection
+        if (["Random Joke", "Pun", "Knock-Knock"].includes(callbackData)) {
             let jokeResponse;
+
             if (callbackData === "Pun") {
                 jokeResponse = "I’m reading a book on anti-gravity… It’s impossible to put down! 😂";
             } else if (callbackData === "Knock-Knock") {
@@ -148,7 +102,6 @@ app.post("/webhook", async (req, res) => {
                 fulfillmentMessages: [
                     { text: { text: [jokeResponse] } },
                     {
-                        platform: "TELEGRAM",
                         payload: {
                             telegram: {
                                 text: "Want another joke?",
@@ -158,19 +111,58 @@ app.post("/webhook", async (req, res) => {
                             },
                         },
                     },
+                ],
+            });
+        }
+
+        // Coping Strategies - Provides category options
+        if (intentName === "Coping Strategies" || callbackData === "Coping Strategies") {
+            return res.json({
+                fulfillmentMessages: [
+                    { text: { text: ["Coping strategies help manage stress. What type would you like?"] } },
                     {
-                        platform: "PLATFORM_UNSPECIFIED",
                         payload: {
-                            richContent: [
-                                [
-                                    {
-                                        type: "chips",
-                                        options: [{ text: "😂 Another One" }]
-                                    }
-                                ]
-                            ]
-                        }
-                    }
+                            telegram: {
+                                text: "Select a category:",
+                                reply_markup: {
+                                    inline_keyboard: [
+                                        [{ text: "🧘 Mindfulness", callback_data: "Mindfulness" }],
+                                        [{ text: "🏃 Exercise", callback_data: "Exercise" }],
+                                        [{ text: "📖 Journaling", callback_data: "Journaling" }],
+                                    ],
+                                },
+                            },
+                        },
+                    },
+                ],
+            });
+        }
+
+        // Coping Strategies - Choice Handling
+        if (["Mindfulness", "Exercise", "Journaling"].includes(callbackData)) {
+            let strategyResponse;
+
+            if (callbackData === "Mindfulness") {
+                strategyResponse = "Take a deep breath. Inhale for 4 seconds, hold for 4 seconds, and exhale for 4 seconds. Repeat. 🧘‍♂️";
+            } else if (callbackData === "Exercise") {
+                strategyResponse = "A quick 5-minute stretch can boost your mood. Try it now! 🏃‍♀️";
+            } else {
+                strategyResponse = "Write down 3 things you're grateful for today. Gratitude journaling helps shift your mindset. 📖✨";
+            }
+
+            return res.json({
+                fulfillmentMessages: [
+                    { text: { text: [strategyResponse] } },
+                    {
+                        payload: {
+                            telegram: {
+                                text: "Want to try another coping strategy?",
+                                reply_markup: {
+                                    inline_keyboard: [[{ text: "🌱 More Strategies", callback_data: "Coping Strategies" }]],
+                                },
+                            },
+                        },
+                    },
                 ],
             });
         }
