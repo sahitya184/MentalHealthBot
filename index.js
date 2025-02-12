@@ -9,6 +9,10 @@ app.post("/webhook", async (req, res) => {
     const intentName = req.body.queryResult.intent.displayName;
     const callbackData = req.body.originalDetectIntentRequest?.payload?.data?.callback_query?.data || "";
 
+    // Debugging logs to check callback data
+    console.log("Received Intent:", intentName);
+    console.log("Received Callback Data:", callbackData);
+
     try {
         res.setHeader("Content-Type", "application/json");
 
@@ -28,14 +32,14 @@ app.post("/webhook", async (req, res) => {
                         payload: {
                             telegram: {
                                 text: "How can I help you today? 😊",
-                                reply_markup: {
+                                reply_markup: JSON.stringify({
                                     inline_keyboard: [
                                         [{ text: "💪 Get Motivation", callback_data: "Get Motivation" }],
                                         [{ text: "😊 Cheer Up", callback_data: "Cheer Up" }],
                                         [{ text: "🌱 Coping Strategies", callback_data: "Coping Strategies" }],
                                         [{ text: "❌ End Chat", callback_data: "End Chat" }]
-                                    ],
-                                },
+                                    ]
+                                }),
                             },
                         },
                     }
@@ -59,13 +63,13 @@ app.post("/webhook", async (req, res) => {
                             payload: {
                                 telegram: {
                                     text: `"${quote}" – ${author}`,
-                                    reply_markup: {
+                                    reply_markup: JSON.stringify({
                                         inline_keyboard: [
                                             [{ text: "🔄 Get Another", callback_data: "Get Motivation" }],
                                             [{ text: "🏠 Back to Menu", callback_data: "Back to Menu" }],
                                             [{ text: "❌ End Chat", callback_data: "End Chat" }]
-                                        ],
-                                    },
+                                        ]
+                                    }),
                                 },
                             },
                         }
@@ -91,13 +95,13 @@ app.post("/webhook", async (req, res) => {
                             payload: {
                                 telegram: {
                                     text: joke,
-                                    reply_markup: {
+                                    reply_markup: JSON.stringify({
                                         inline_keyboard: [
                                             [{ text: "🤣 Another One!", callback_data: "Cheer Up" }],
                                             [{ text: "🏠 Back to Menu", callback_data: "Back to Menu" }],
                                             [{ text: "❌ End Chat", callback_data: "End Chat" }]
-                                        ],
-                                    },
+                                        ]
+                                    }),
                                 },
                             },
                         }
@@ -131,13 +135,13 @@ app.post("/webhook", async (req, res) => {
                         payload: {
                             telegram: {
                                 text: randomStrategy,
-                                reply_markup: {
+                                reply_markup: JSON.stringify({
                                     inline_keyboard: [
                                         [{ text: "🌱 Another Tip", callback_data: "Coping Strategies" }],
                                         [{ text: "🏠 Back to Menu", callback_data: "Back to Menu" }],
                                         [{ text: "❌ End Chat", callback_data: "End Chat" }]
-                                    ],
-                                },
+                                    ]
+                                }),
                             },
                         },
                     }
@@ -149,24 +153,20 @@ app.post("/webhook", async (req, res) => {
         if (callbackData === "Back to Menu") {
             return res.json({
                 fulfillmentMessages: [
-                    { 
-                        text: { 
-                            text: ["You're back at the main menu! 😊 I'm here to help. Choose an option below:"] 
-                        } 
-                    },
+                    { text: { text: ["You're back at the main menu! 😊 I'm here to help. Choose an option below:"] } },
                     {
                         platform: "TELEGRAM",
                         payload: {
                             telegram: {
                                 text: "How can I help you today? 😊",
-                                reply_markup: {
+                                reply_markup: JSON.stringify({
                                     inline_keyboard: [
                                         [{ text: "💪 Get Motivation", callback_data: "Get Motivation" }],
                                         [{ text: "😊 Cheer Up", callback_data: "Cheer Up" }],
                                         [{ text: "🌱 Coping Strategies", callback_data: "Coping Strategies" }],
                                         [{ text: "❌ End Chat", callback_data: "End Chat" }]
-                                    ],
-                                },
+                                    ]
+                                }),
                             },
                         },
                     }
@@ -184,6 +184,9 @@ app.post("/webhook", async (req, res) => {
                         payload: {
                             telegram: {
                                 text: "Chat ended. If you need support again, just type *'start'*. 💙",
+                                reply_markup: JSON.stringify({
+                                    inline_keyboard: [] // Removes buttons
+                                })
                             },
                         },
                     }
