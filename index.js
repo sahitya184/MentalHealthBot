@@ -1,5 +1,6 @@
 const express = require("express");
 const bodyParser = require("body-parser");
+const fetch = require("node-fetch");
 const axios = require("axios");
 
 const app = express();
@@ -7,21 +8,15 @@ app.use(bodyParser.json());
 
 app.post("/webhook", async (req, res) => {
     const intentName = req.body.queryResult.intent.displayName;
-    console.log(`Received intent: ${intentName}`);
+    const parameters = req.body.queryResult.parameters;
+    const callbackData = req.body.originalDetectIntentRequest?.payload?.data?.callback_query?.data;
 
     try {
         // Welcome Intent
         if (intentName === "Welcome Intent") {
-            console.log("Handling Welcome Intent...");
             return res.json({
                 fulfillmentMessages: [
-                    {
-                        text: {
-                            text: [
-                                "Hello there! 👋 Welcome to your safe space. 🌈\n\nI’m here to help you feel supported, uplifted, and ready to take on anything. \n\nWhat would you like to explore right now?",
-                            ],
-                        },
-                    },
+                    { text: { text: ["Hello there! 👋 Welcome to your safe space. 🌈\n\nI’m here to support you. What would you like to explore?"] } },
                     {
                         payload: {
                             telegram: {
@@ -36,98 +31,39 @@ app.post("/webhook", async (req, res) => {
                             },
                         },
                     },
-                    {
-                        payload: {
-                            richContent: [
-                                [
-                                    {
-                                        "type": "button",
-                                        "text": "💪 Get Motivation",
-                                        "event": { "name": "Get Motivation", "languageCode": "en" }
-                                    },
-                                    {
-                                        "type": "button",
-                                        "text": "😊 Cheer Up",
-                                        "event": { "name": "Cheer Up", "languageCode": "en" }
-                                    },
-                                    {
-                                        "type": "button",
-                                        "text": "🌱 Coping Strategies",
-                                        "event": { "name": "Coping Strategies", "languageCode": "en" }
-                                    }
-                                ]
-                            ]
-                        }
-                    }
                 ],
             });
         }
 
         // Get Motivation
-        if (intentName === "Get Motivation") {
-            console.log("Fetching motivation quote...");
-            try {
-                const response = await axios.get("https://zenquotes.io/api/random", { timeout: 4000 });
-                const data = response.data;
-                const quote = data[0]?.q || "Stay strong, you're doing great! 💪";
-                const author = data[0]?.a || "Unknown";
+        if (intentName === "Get Motivation" || callbackData === "Get Motivation") {
+            const response = await fetch("https://zenquotes.io/api/random");
+            const data = await response.json();
+            const quote = data[0]?.q || "Stay strong, you're doing great! 💪";
+            const author = data[0]?.a || "Unknown";
 
-                return res.json({
-                    fulfillmentMessages: [
-                        {
-                            text: {
-                                text: [
-                                    `I hear you. We all have tough days, but you're stronger than you think. 💙\n\nHere's something to lift your spirits:\n\n"${quote}" – ${author}`,
-                                ],
-                            },
-                        },
-                        {
-                            payload: {
-                                telegram: {
-                                    text: "Would you like another quote?",
-                                    reply_markup: {
-                                        inline_keyboard: [
-                                            [{ text: "🔄 Another Quote", callback_data: "Get Motivation" }],
-                                        ],
-                                    },
+            return res.json({
+                fulfillmentMessages: [
+                    { text: { text: [`"${quote}" – ${author}`] } },
+                    {
+                        payload: {
+                            telegram: {
+                                text: "Would you like another quote?",
+                                reply_markup: {
+                                    inline_keyboard: [[{ text: "🔄 Another Quote", callback_data: "Get Motivation" }]],
                                 },
                             },
                         },
-                        {
-                            payload: {
-                                richContent: [
-                                    [
-                                        {
-                                            "type": "button",
-                                            "text": "🔄 Another Quote",
-                                            "event": { "name": "Get Motivation", "languageCode": "en" }
-                                        }
-                                    ]
-                                ]
-                            }
-                        }
-                    ],
-                });
-            } catch (error) {
-                console.error("Error fetching quote:", error.message);
-                return res.json({
-                    fulfillmentMessages: [
-                        { text: { text: ["Oops! Couldn't fetch a quote right now. Try again later!"] } },
-                    ],
-                });
-            }
+                    },
+                ],
+            });
         }
 
         // Cheer Up (Jokes)
-        if (intentName === "Cheer Up") {
-            console.log("Handling Cheer Up Intent...");
+        if (intentName === "Cheer Up" || callbackData === "Cheer Up") {
             return res.json({
                 fulfillmentMessages: [
-                    {
-                        text: {
-                            text: ["I’d love to make you smile! 😊 What kind of joke would you like?"],
-                        },
-                    },
+                    { text: { text: ["I’d love to make you smile! 😊 What kind of joke would you like?"] } },
                     {
                         payload: {
                             telegram: {
@@ -142,43 +78,44 @@ app.post("/webhook", async (req, res) => {
                             },
                         },
                     },
+                ],
+            });
+        }
+
+        // Cheer Up - Type (Joke Selection)
+        if (intentName === "cheer up - type" || ["Random Joke", "Pun", "Knock-Knock"].includes(callbackData)) {
+            let jokeResponse;
+            if (callbackData === "Pun") {
+                jokeResponse = "I’m reading a book on anti-gravity… It’s impossible to put down! 😂";
+            } else if (callbackData === "Knock-Knock") {
+                jokeResponse = "Knock, knock. \nWho's there? \nOlive. \nOlive who? \nOlive you and I miss you! ❤️";
+            } else {
+                const jokeAPI = await axios.get("https://official-joke-api.appspot.com/jokes/random");
+                jokeResponse = `${jokeAPI.data.setup} ... ${jokeAPI.data.punchline}`;
+            }
+
+            return res.json({
+                fulfillmentMessages: [
+                    { text: { text: [jokeResponse] } },
                     {
                         payload: {
-                            richContent: [
-                                [
-                                    {
-                                        "type": "button",
-                                        "text": "🤣 Random",
-                                        "event": { "name": "Random Joke", "languageCode": "en" }
-                                    },
-                                    {
-                                        "type": "button",
-                                        "text": "😂 Pun",
-                                        "event": { "name": "Pun", "languageCode": "en" }
-                                    },
-                                    {
-                                        "type": "button",
-                                        "text": "🤭 Knock-Knock",
-                                        "event": { "name": "Knock-Knock", "languageCode": "en" }
-                                    }
-                                ]
-                            ]
-                        }
-                    }
+                            telegram: {
+                                text: "Want another joke?",
+                                reply_markup: {
+                                    inline_keyboard: [[{ text: "😂 Another One", callback_data: "Cheer Up" }]],
+                                },
+                            },
+                        },
+                    },
                 ],
             });
         }
 
         // Coping Strategies
-        if (intentName === "Coping Strategies") {
-            console.log("Handling Coping Strategies Intent...");
+        if (intentName === "Coping Strategies" || callbackData === "Coping Strategies") {
             return res.json({
                 fulfillmentMessages: [
-                    {
-                        text: {
-                            text: ["Coping strategies can help you manage stress better. What type of strategy would you like?"],
-                        },
-                    },
+                    { text: { text: ["Coping strategies help manage stress. What type would you like?"] } },
                     {
                         payload: {
                             telegram: {
@@ -193,47 +130,50 @@ app.post("/webhook", async (req, res) => {
                             },
                         },
                     },
-                    {
-                        payload: {
-                            richContent: [
-                                [
-                                    {
-                                        "type": "button",
-                                        "text": "🧘 Mindfulness",
-                                        "event": { "name": "Mindfulness", "languageCode": "en" }
-                                    },
-                                    {
-                                        "type": "button",
-                                        "text": "🏃 Exercise",
-                                        "event": { "name": "Exercise", "languageCode": "en" }
-                                    },
-                                    {
-                                        "type": "button",
-                                        "text": "📖 Journaling",
-                                        "event": { "name": "Journaling", "languageCode": "en" }
-                                    }
-                                ]
-                            ]
-                        }
-                    }
                 ],
             });
         }
 
-        // Default Fallback
-        console.log("Fallback Intent Triggered.");
+        // Coping Strategies - Choice
+        if (intentName === "coping strategies - choice" || ["Mindfulness", "Exercise", "Journaling"].includes(callbackData)) {
+            let strategyResponse;
+            if (callbackData === "Mindfulness") {
+                strategyResponse = "Take a deep breath. Inhale for 4 seconds, hold for 4 seconds, and exhale for 4 seconds. Repeat. 🧘‍♂️";
+            } else if (callbackData === "Exercise") {
+                strategyResponse = "A quick 5-minute stretch can boost your mood. Try it now! 🏃‍♀️";
+            } else {
+                strategyResponse = "Write down 3 things you're grateful for today. Gratitude journaling helps shift your mindset. 📖✨";
+            }
+
+            return res.json({
+                fulfillmentMessages: [
+                    { text: { text: [strategyResponse] } },
+                    {
+                        payload: {
+                            telegram: {
+                                text: "Want to try another coping strategy?",
+                                reply_markup: {
+                                    inline_keyboard: [[{ text: "🌱 More Strategies", callback_data: "Coping Strategies" }]],
+                                },
+                            },
+                        },
+                    },
+                ],
+            });
+        }
+
+        // Default Response
         return res.json({
             fulfillmentMessages: [{ text: { text: ["I didn’t quite get that. Can you try again?"] } }],
         });
 
     } catch (error) {
-        console.error("Unexpected Error:", error.message);
+        console.error("Error:", error);
         return res.json({
-            fulfillmentMessages: [{ text: { text: ["Oops! Something went wrong. Please try again."] } }],
+            fulfillmentMessages: [{ text: { text: ["Oops! Something went wrong."] } }],
         });
     }
 });
 
-// Start the server
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
