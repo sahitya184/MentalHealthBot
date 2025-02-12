@@ -36,16 +36,7 @@ app.post("/webhook", async (req, res) => {
                         platform: "PLATFORM_UNSPECIFIED",
                         payload: {
                             richContent: [
-                                [
-                                    {
-                                        type: "chips",
-                                        options: [
-                                            { text: "💪 Get Motivation" },
-                                            { text: "😊 Cheer Up" },
-                                            { text: "🌱 Coping Strategies" }
-                                        ]
-                                    }
-                                ]
+                                [{ type: "chips", options: [{ text: "💪 Get Motivation" }, { text: "😊 Cheer Up" }, { text: "🌱 Coping Strategies" }] }]
                             ]
                         }
                     }
@@ -77,14 +68,7 @@ app.post("/webhook", async (req, res) => {
                     {
                         platform: "PLATFORM_UNSPECIFIED",
                         payload: {
-                            richContent: [
-                                [
-                                    {
-                                        type: "chips",
-                                        options: [{ text: "🔄 Another Quote" }]
-                                    }
-                                ]
-                            ]
+                            richContent: [[{ type: "chips", options: [{ text: "🔄 Another Quote" }] }]]
                         }
                     }
                 ],
@@ -114,18 +98,7 @@ app.post("/webhook", async (req, res) => {
                     {
                         platform: "PLATFORM_UNSPECIFIED",
                         payload: {
-                            richContent: [
-                                [
-                                    {
-                                        type: "chips",
-                                        options: [
-                                            { text: "🤣 Random" },
-                                            { text: "😂 Pun" },
-                                            { text: "🤭 Knock-Knock" }
-                                        ]
-                                    }
-                                ]
-                            ]
+                            richContent: [[{ type: "chips", options: [{ text: "🤣 Random" }, { text: "😂 Pun" }, { text: "🤭 Knock-Knock" }] }]]
                         }
                     }
                 ],
@@ -133,7 +106,7 @@ app.post("/webhook", async (req, res) => {
         }
 
         // Cheer Up - Type (Joke Selection)
-        if (intentName === "cheer up - type" || ["Random Joke", "Pun", "Knock-Knock"].includes(callbackData)) {
+        if (["Random Joke", "Pun", "Knock-Knock"].includes(callbackData)) {
             let jokeResponse;
             if (callbackData === "Pun") {
                 jokeResponse = "I’m reading a book on anti-gravity… It’s impossible to put down! 😂";
@@ -161,14 +134,7 @@ app.post("/webhook", async (req, res) => {
                     {
                         platform: "PLATFORM_UNSPECIFIED",
                         payload: {
-                            richContent: [
-                                [
-                                    {
-                                        type: "chips",
-                                        options: [{ text: "😂 Another One" }]
-                                    }
-                                ]
-                            ]
+                            richContent: [[{ type: "chips", options: [{ text: "😂 Another One" }] }]]
                         }
                     }
                 ],
@@ -194,23 +160,6 @@ app.post("/webhook", async (req, res) => {
                                 },
                             },
                         },
-                    },
-                    {
-                        platform: "PLATFORM_UNSPECIFIED",
-                        payload: {
-                            richContent: [
-                                [
-                                    {
-                                        type: "chips",
-                                        options: [
-                                            { text: "🧘 Deep Breathing" },
-                                            { text: "✍️ Journaling" },
-                                            { text: "🎵 Listen to Music" }
-                                        ]
-                                    }
-                                ]
-                            ]
-                        }
                     }
                 ],
             });
@@ -218,19 +167,15 @@ app.post("/webhook", async (req, res) => {
 
         // Coping Strategies - Choice Handling
         if (["Deep Breathing", "Journaling", "Listen to Music"].includes(callbackData)) {
-            let strategyResponse = "";
-            if (callbackData === "Deep Breathing") {
-                strategyResponse = "Try this: Inhale for 4 seconds, hold for 4 seconds, and exhale for 4 seconds. Repeat 5 times. 🧘‍♂️";
-            } else if (callbackData === "Journaling") {
-                strategyResponse = "Write down three things you're grateful for today. It helps shift your focus to positivity! ✍️";
-            } else if (callbackData === "Listen to Music") {
-                strategyResponse = "Put on your favorite song and take a moment to enjoy it. Music has a powerful effect on emotions! 🎵";
-
-            }
+            const strategyResponses = {
+                "Deep Breathing": "Try this: Inhale for 4 seconds, hold for 4 seconds, and exhale for 4 seconds. Repeat 5 times. 🧘‍♂️",
+                "Journaling": "Write down three things you're grateful for today. It helps shift your focus to positivity! ✍️",
+                "Listen to Music": "Put on your favorite song and take a moment to enjoy it. Music has a powerful effect on emotions! 🎵"
+            };
 
             return res.json({
                 fulfillmentMessages: [
-                    { text: { text: [strategyResponse] } },
+                    { text: { text: [strategyResponses[callbackData]] } },
                     {
                         platform: "TELEGRAM",
                         payload: {
@@ -246,16 +191,10 @@ app.post("/webhook", async (req, res) => {
             });
         }
 
-        // Default Response
-        return res.json({
-            fulfillmentMessages: [{ text: { text: ["I didn’t quite get that. Can you try again?"] } }],
-        });
-
+        return res.json({ fulfillmentMessages: [{ text: { text: ["I didn’t quite get that. Can you try again?"] } }] });
     } catch (error) {
         console.error("Error:", error);
-        return res.json({
-            fulfillmentMessages: [{ text: { text: ["Oops! Something went wrong."] } }],
-        });
+        return res.json({ fulfillmentMessages: [{ text: { text: ["Oops! Something went wrong."] } }] });
     }
 });
 
