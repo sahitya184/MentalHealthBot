@@ -9,7 +9,6 @@ app.post("/webhook", async (req, res) => {
     const intentName = req.body.queryResult.intent.displayName;
     const callbackData = req.body.originalDetectIntentRequest?.payload?.data?.callback_query?.data || "";
 
-    // Debugging logs to check callback data
     console.log("Received Intent:", intentName);
     console.log("Received Callback Data:", callbackData);
 
@@ -174,7 +173,7 @@ app.post("/webhook", async (req, res) => {
             });
         }
 
-        // End Chat Handling
+        // End Chat Handling (Properly Removes Buttons)
         if (callbackData === "End Chat") {
             return res.json({
                 fulfillmentMessages: [
@@ -184,9 +183,7 @@ app.post("/webhook", async (req, res) => {
                         payload: {
                             telegram: {
                                 text: "Chat ended. If you need support again, just type *'start'*. 💙",
-                                reply_markup: JSON.stringify({
-                                    inline_keyboard: [] // Removes buttons
-                                })
+                                reply_markup: JSON.stringify({ remove_keyboard: true }) // Removes all buttons
                             },
                         },
                     }
