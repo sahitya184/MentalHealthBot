@@ -53,7 +53,7 @@ app.post("/webhook", async (req, res) => {
             });
         }
 
-        // Get Motivation
+        // Get Motivation (Including "Another Quote")
         if (intentName === "Get Motivation" || callbackData === "Get Motivation") {
             const response = await fetch("https://zenquotes.io/api/random");
             const data = await response.json();
@@ -170,6 +170,77 @@ app.post("/webhook", async (req, res) => {
                                 ]
                             ]
                         }
+                    }
+                ],
+            });
+        }
+
+        // Coping Strategies
+        if (intentName === "Coping Strategies" || callbackData === "Coping Strategies") {
+            return res.json({
+                fulfillmentMessages: [
+                    { text: { text: ["Here are some ways to cope with stress. Which one would you like to try?"] } },
+                    {
+                        platform: "TELEGRAM",
+                        payload: {
+                            telegram: {
+                                text: "Select a coping strategy:",
+                                reply_markup: {
+                                    inline_keyboard: [
+                                        [{ text: "🧘 Deep Breathing", callback_data: "Deep Breathing" }],
+                                        [{ text: "✍️ Journaling", callback_data: "Journaling" }],
+                                        [{ text: "🎵 Listen to Music", callback_data: "Listen to Music" }],
+                                    ],
+                                },
+                            },
+                        },
+                    },
+                    {
+                        platform: "PLATFORM_UNSPECIFIED",
+                        payload: {
+                            richContent: [
+                                [
+                                    {
+                                        type: "chips",
+                                        options: [
+                                            { text: "🧘 Deep Breathing" },
+                                            { text: "✍️ Journaling" },
+                                            { text: "🎵 Listen to Music" }
+                                        ]
+                                    }
+                                ]
+                            ]
+                        }
+                    }
+                ],
+            });
+        }
+
+        // Coping Strategies - Choice Handling
+        if (["Deep Breathing", "Journaling", "Listen to Music"].includes(callbackData)) {
+            let strategyResponse = "";
+            if (callbackData === "Deep Breathing") {
+                strategyResponse = "Try this: Inhale for 4 seconds, hold for 4 seconds, and exhale for 4 seconds. Repeat 5 times. 🧘‍♂️";
+            } else if (callbackData === "Journaling") {
+                strategyResponse = "Write down three things you're grateful for today. It helps shift your focus to positivity! ✍️";
+            } else if (callbackData === "Listen to Music") {
+                strategyResponse = "Put on your favorite song and take a moment to enjoy it. Music has a powerful effect on emotions! 🎵";
+
+            }
+
+            return res.json({
+                fulfillmentMessages: [
+                    { text: { text: [strategyResponse] } },
+                    {
+                        platform: "TELEGRAM",
+                        payload: {
+                            telegram: {
+                                text: "Would you like to try another coping strategy?",
+                                reply_markup: {
+                                    inline_keyboard: [[{ text: "🔄 Another Strategy", callback_data: "Coping Strategies" }]],
+                                },
+                            },
+                        },
                     }
                 ],
             });
