@@ -32,19 +32,12 @@ app.post("/webhook", async (req, res) => {
                                     inline_keyboard: [
                                         [{ text: "💪 Get Motivation", callback_data: "Get Motivation" }],
                                         [{ text: "😊 Cheer Up", callback_data: "Cheer Up" }],
-                                        [{ text: "🌱 Coping Strategies", callback_data: "Coping Strategies" }]
+                                        [{ text: "🌱 Coping Strategies", callback_data: "Coping Strategies" }],
+                                        [{ text: "❌ End Chat", callback_data: "End Chat" }]
                                     ],
                                 },
                             },
                         },
-                    },
-                    {
-                        platform: "PLATFORM_UNSPECIFIED",
-                        payload: {
-                            richContent: [
-                                [{ type: "chips", options: [{ text: "💪 Get Motivation" }, { text: "😊 Cheer Up" }, { text: "🌱 Coping Strategies" }] }]
-                            ]
-                        }
                     }
                 ],
             });
@@ -67,7 +60,11 @@ app.post("/webhook", async (req, res) => {
                                 telegram: {
                                     text: `"${quote}" – ${author}`,
                                     reply_markup: {
-                                        inline_keyboard: [[{ text: "🔄 Get Another", callback_data: "Get Motivation" }]],
+                                        inline_keyboard: [
+                                            [{ text: "🔄 Get Another", callback_data: "Get Motivation" }],
+                                            [{ text: "🏠 Back to Menu", callback_data: "Welcome Intent" }],
+                                            [{ text: "❌ End Chat", callback_data: "End Chat" }]
+                                        ],
                                     },
                                 },
                             },
@@ -95,7 +92,11 @@ app.post("/webhook", async (req, res) => {
                                 telegram: {
                                     text: joke,
                                     reply_markup: {
-                                        inline_keyboard: [[{ text: "🤣 Another One!", callback_data: "Cheer Up" }]],
+                                        inline_keyboard: [
+                                            [{ text: "🤣 Another One!", callback_data: "Cheer Up" }],
+                                            [{ text: "🏠 Back to Menu", callback_data: "Welcome Intent" }],
+                                            [{ text: "❌ End Chat", callback_data: "End Chat" }]
+                                        ],
                                     },
                                 },
                             },
@@ -131,8 +132,29 @@ app.post("/webhook", async (req, res) => {
                             telegram: {
                                 text: randomStrategy,
                                 reply_markup: {
-                                    inline_keyboard: [[{ text: "🌱 Another Tip", callback_data: "Coping Strategies" }]],
+                                    inline_keyboard: [
+                                        [{ text: "🌱 Another Tip", callback_data: "Coping Strategies" }],
+                                        [{ text: "🏠 Back to Menu", callback_data: "Welcome Intent" }],
+                                        [{ text: "❌ End Chat", callback_data: "End Chat" }]
+                                    ],
                                 },
+                            },
+                        },
+                    }
+                ],
+            });
+        }
+
+        // End Chat Handling
+        if (callbackData === "End Chat") {
+            return res.json({
+                fulfillmentMessages: [
+                    { text: { text: ["I'm always here whenever you need me. Take care! 💙"] } },
+                    {
+                        platform: "TELEGRAM",
+                        payload: {
+                            telegram: {
+                                text: "I'm always here whenever you need me. Take care! 💙",
                             },
                         },
                     }
