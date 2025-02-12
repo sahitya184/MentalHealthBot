@@ -8,7 +8,7 @@ app.use(bodyParser.json());
 app.post("/webhook", async (req, res) => {
     const intentName = req.body.queryResult.intent.displayName;
     const callbackData = req.body.originalDetectIntentRequest?.payload?.data?.callback_query?.data || "";
-
+    
     console.log("Received Intent:", intentName);
     console.log("Received Callback Data:", callbackData);
 
@@ -20,25 +20,21 @@ app.post("/webhook", async (req, res) => {
             return res.json({
                 fulfillmentMessages: [
                     { 
-                        text: { 
-                            text: [
-                                "Hello there! 👋 I'm your Mental Health Support Bot. I'm here to lift your spirits and support you whenever you need. 💙\n\nHere's what I can do for you:\n\n✨ **Get Motivation** – Inspiring words to keep you going.\n😂 **Cheer Up** – A joke to make you smile.\n🌱 **Coping Strategies** – Helpful ways to manage stress.\n\nHow can I help you today? 😊"
-                            ] 
-                        } 
+                        text: { text: ["Hello there! 👋 I'm your Mental Health Support Bot. 💙"] }
                     },
                     {
                         platform: "TELEGRAM",
                         payload: {
                             telegram: {
                                 text: "How can I help you today? 😊",
-                                reply_markup: JSON.stringify({
+                                reply_markup: {
                                     inline_keyboard: [
                                         [{ text: "💪 Get Motivation", callback_data: "Get Motivation" }],
                                         [{ text: "😊 Cheer Up", callback_data: "Cheer Up" }],
                                         [{ text: "🌱 Coping Strategies", callback_data: "Coping Strategies" }],
                                         [{ text: "❌ End Chat", callback_data: "End Chat" }]
                                     ]
-                                }),
+                                },
                             },
                         },
                     }
@@ -62,13 +58,13 @@ app.post("/webhook", async (req, res) => {
                             payload: {
                                 telegram: {
                                     text: `"${quote}" – ${author}`,
-                                    reply_markup: JSON.stringify({
+                                    reply_markup: {
                                         inline_keyboard: [
                                             [{ text: "🔄 Get Another", callback_data: "Get Motivation" }],
                                             [{ text: "🏠 Back to Menu", callback_data: "Back to Menu" }],
                                             [{ text: "❌ End Chat", callback_data: "End Chat" }]
                                         ]
-                                    }),
+                                    },
                                 },
                             },
                         }
@@ -80,7 +76,7 @@ app.post("/webhook", async (req, res) => {
             }
         }
 
-        // Cheer Up (Jokes - Direct)
+        // Cheer Up (Jokes)
         if (intentName === "Cheer Up" || callbackData === "Cheer Up") {
             try {
                 const jokeResponse = await axios.get("https://official-joke-api.appspot.com/random_joke");
@@ -94,13 +90,13 @@ app.post("/webhook", async (req, res) => {
                             payload: {
                                 telegram: {
                                     text: joke,
-                                    reply_markup: JSON.stringify({
+                                    reply_markup: {
                                         inline_keyboard: [
                                             [{ text: "🤣 Another One!", callback_data: "Cheer Up" }],
                                             [{ text: "🏠 Back to Menu", callback_data: "Back to Menu" }],
                                             [{ text: "❌ End Chat", callback_data: "End Chat" }]
                                         ]
-                                    }),
+                                    },
                                 },
                             },
                         }
@@ -112,7 +108,7 @@ app.post("/webhook", async (req, res) => {
             }
         }
 
-        // Coping Strategies (Direct)
+        // Coping Strategies
         if (intentName === "Coping Strategies" || callbackData === "Coping Strategies") {
             const strategies = [
                 "Take deep breaths and count to 10. 🧘‍♀️",
@@ -134,13 +130,13 @@ app.post("/webhook", async (req, res) => {
                         payload: {
                             telegram: {
                                 text: randomStrategy,
-                                reply_markup: JSON.stringify({
+                                reply_markup: {
                                     inline_keyboard: [
                                         [{ text: "🌱 Another Tip", callback_data: "Coping Strategies" }],
                                         [{ text: "🏠 Back to Menu", callback_data: "Back to Menu" }],
                                         [{ text: "❌ End Chat", callback_data: "End Chat" }]
                                     ]
-                                }),
+                                },
                             },
                         },
                     }
@@ -152,20 +148,20 @@ app.post("/webhook", async (req, res) => {
         if (callbackData === "Back to Menu") {
             return res.json({
                 fulfillmentMessages: [
-                    { text: { text: ["You're back at the main menu! 😊 I'm here to help. Choose an option below:"] } },
+                    { text: { text: ["You're back at the main menu! 😊"] } },
                     {
                         platform: "TELEGRAM",
                         payload: {
                             telegram: {
                                 text: "How can I help you today? 😊",
-                                reply_markup: JSON.stringify({
+                                reply_markup: {
                                     inline_keyboard: [
                                         [{ text: "💪 Get Motivation", callback_data: "Get Motivation" }],
                                         [{ text: "😊 Cheer Up", callback_data: "Cheer Up" }],
                                         [{ text: "🌱 Coping Strategies", callback_data: "Coping Strategies" }],
                                         [{ text: "❌ End Chat", callback_data: "End Chat" }]
                                     ]
-                                }),
+                                },
                             },
                         },
                     }
@@ -173,7 +169,7 @@ app.post("/webhook", async (req, res) => {
             });
         }
 
-        // End Chat Handling (Properly Removes Buttons)
+        // End Chat Handling
         if (callbackData === "End Chat") {
             return res.json({
                 fulfillmentMessages: [
@@ -183,7 +179,9 @@ app.post("/webhook", async (req, res) => {
                         payload: {
                             telegram: {
                                 text: "Chat ended. If you need support again, just type *'start'*. 💙",
-                                reply_markup: JSON.stringify({ remove_keyboard: true }) // Removes all buttons
+                                reply_markup: {
+                                    inline_keyboard: [] // Removes buttons
+                                }
                             },
                         },
                     }
