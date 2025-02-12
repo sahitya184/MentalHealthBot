@@ -12,7 +12,7 @@ app.post("/webhook", async (req, res) => {
     try {
         res.setHeader("Content-Type", "application/json");
 
-        // Welcome Intent
+        // Welcome Intent (Main Menu)
         if (intentName === "Welcome Intent") {
             return res.json({
                 fulfillmentMessages: [
@@ -62,7 +62,7 @@ app.post("/webhook", async (req, res) => {
                                     reply_markup: {
                                         inline_keyboard: [
                                             [{ text: "🔄 Get Another", callback_data: "Get Motivation" }],
-                                            [{ text: "🏠 Back to Menu", callback_data: "Welcome Intent" }],
+                                            [{ text: "🏠 Back to Menu", callback_data: "Back to Menu" }],
                                             [{ text: "❌ End Chat", callback_data: "End Chat" }]
                                         ],
                                     },
@@ -94,7 +94,7 @@ app.post("/webhook", async (req, res) => {
                                     reply_markup: {
                                         inline_keyboard: [
                                             [{ text: "🤣 Another One!", callback_data: "Cheer Up" }],
-                                            [{ text: "🏠 Back to Menu", callback_data: "Welcome Intent" }],
+                                            [{ text: "🏠 Back to Menu", callback_data: "Back to Menu" }],
                                             [{ text: "❌ End Chat", callback_data: "End Chat" }]
                                         ],
                                     },
@@ -134,7 +134,36 @@ app.post("/webhook", async (req, res) => {
                                 reply_markup: {
                                     inline_keyboard: [
                                         [{ text: "🌱 Another Tip", callback_data: "Coping Strategies" }],
-                                        [{ text: "🏠 Back to Menu", callback_data: "Welcome Intent" }],
+                                        [{ text: "🏠 Back to Menu", callback_data: "Back to Menu" }],
+                                        [{ text: "❌ End Chat", callback_data: "End Chat" }]
+                                    ],
+                                },
+                            },
+                        },
+                    }
+                ],
+            });
+        }
+
+        // Back to Menu Handling
+        if (callbackData === "Back to Menu") {
+            return res.json({
+                fulfillmentMessages: [
+                    { 
+                        text: { 
+                            text: ["You're back at the main menu! 😊 I'm here to help. Choose an option below:"] 
+                        } 
+                    },
+                    {
+                        platform: "TELEGRAM",
+                        payload: {
+                            telegram: {
+                                text: "How can I help you today? 😊",
+                                reply_markup: {
+                                    inline_keyboard: [
+                                        [{ text: "💪 Get Motivation", callback_data: "Get Motivation" }],
+                                        [{ text: "😊 Cheer Up", callback_data: "Cheer Up" }],
+                                        [{ text: "🌱 Coping Strategies", callback_data: "Coping Strategies" }],
                                         [{ text: "❌ End Chat", callback_data: "End Chat" }]
                                     ],
                                 },
@@ -154,7 +183,7 @@ app.post("/webhook", async (req, res) => {
                         platform: "TELEGRAM",
                         payload: {
                             telegram: {
-                                text: "I'm always here whenever you need me. Take care! 💙",
+                                text: "Chat ended. If you need support again, just type *'start'*. 💙",
                             },
                         },
                     }
