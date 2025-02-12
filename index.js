@@ -19,9 +19,7 @@ app.post("/webhook", async (req, res) => {
         if (intentName === "Welcome Intent") {
             return res.json({
                 fulfillmentMessages: [
-                    { 
-                        text: { text: ["Hello there! 👋 I'm your Mental Health Support Bot. 💙"] }
-                    },
+                    { text: { text: ["Hello there! 👋 I'm your Mental Health Support Bot. 💙"] } },
                     {
                         platform: "TELEGRAM",
                         payload: {
@@ -42,7 +40,7 @@ app.post("/webhook", async (req, res) => {
             });
         }
 
-        // Get Motivation (Direct Response)
+        // Get Motivation
         if (intentName === "Get Motivation" || callbackData === "Get Motivation") {
             try {
                 const response = await axios.get("https://zenquotes.io/api/random");
@@ -61,7 +59,6 @@ app.post("/webhook", async (req, res) => {
                                     reply_markup: {
                                         inline_keyboard: [
                                             [{ text: "🔄 Get Another", callback_data: "Get Motivation" }],
-                                            [{ text: "🏠 Back to Menu", callback_data: "Back to Menu" }],
                                             [{ text: "❌ End Chat", callback_data: "End Chat" }]
                                         ]
                                     },
@@ -93,7 +90,6 @@ app.post("/webhook", async (req, res) => {
                                     reply_markup: {
                                         inline_keyboard: [
                                             [{ text: "🤣 Another One!", callback_data: "Cheer Up" }],
-                                            [{ text: "🏠 Back to Menu", callback_data: "Back to Menu" }],
                                             [{ text: "❌ End Chat", callback_data: "End Chat" }]
                                         ]
                                     },
@@ -133,7 +129,6 @@ app.post("/webhook", async (req, res) => {
                                 reply_markup: {
                                     inline_keyboard: [
                                         [{ text: "🌱 Another Tip", callback_data: "Coping Strategies" }],
-                                        [{ text: "🏠 Back to Menu", callback_data: "Back to Menu" }],
                                         [{ text: "❌ End Chat", callback_data: "End Chat" }]
                                     ]
                                 },
@@ -144,24 +139,16 @@ app.post("/webhook", async (req, res) => {
             });
         }
 
-        // Back to Menu Handling
+        // Back to Menu (Modified: Now Shows Restart Instructions)
         if (callbackData === "Back to Menu") {
             return res.json({
                 fulfillmentMessages: [
-                    { text: { text: ["You're back at the main menu! 😊"] } },
+                    { text: { text: ["If you'd like to start over, just type *'start'* in the chat! 😊"] } },
                     {
                         platform: "TELEGRAM",
                         payload: {
                             telegram: {
-                                text: "How can I help you today? 😊",
-                                reply_markup: {
-                                    inline_keyboard: [
-                                        [{ text: "💪 Get Motivation", callback_data: "Get Motivation" }],
-                                        [{ text: "😊 Cheer Up", callback_data: "Cheer Up" }],
-                                        [{ text: "🌱 Coping Strategies", callback_data: "Coping Strategies" }],
-                                        [{ text: "❌ End Chat", callback_data: "End Chat" }]
-                                    ]
-                                },
+                                text: "To restart the chat, type *'start'*. I'm always here to help! 💙",
                             },
                         },
                     }
@@ -169,19 +156,16 @@ app.post("/webhook", async (req, res) => {
             });
         }
 
-        // End Chat Handling
+        // End Chat (Modified: Now Shows End Message)
         if (callbackData === "End Chat") {
             return res.json({
                 fulfillmentMessages: [
-                    { text: { text: ["I'm always here whenever you need me. Take care! 💙"] } },
+                    { text: { text: ["Chat ended. If you need support again, just type *'start'* to begin a new conversation. 💙"] } },
                     {
                         platform: "TELEGRAM",
                         payload: {
                             telegram: {
-                                text: "Chat ended. If you need support again, just type *'start'*. 💙",
-                                reply_markup: {
-                                    inline_keyboard: [] // Removes buttons
-                                }
+                                text: "Chat ended. If you need support again, just type *'start'* anytime. Take care! 💙",
                             },
                         },
                     }
