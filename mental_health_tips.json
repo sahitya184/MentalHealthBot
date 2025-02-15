@@ -1,6 +1,7 @@
 [
     {
         "category": "stress",
+        "keywords": ["stress", "overwhelmed", "pressure"],
         "tips": [
             "Take deep breaths and practice mindfulness.",
             "Go for a short walk to clear your mind.",
@@ -9,6 +10,7 @@
     },
     {
         "category": "anxiety",
+        "keywords": ["anxious", "nervous", "worry"],
         "tips": [
             "Try grounding techniques like the 5-4-3-2-1 method.",
             "Write down your worries to gain perspective.",
@@ -17,6 +19,7 @@
     },
     {
         "category": "motivation",
+        "keywords": ["motivated", "goal", "focus"],
         "tips": [
             "Set small, achievable goals to stay motivated.",
             "Surround yourself with positive and supportive people.",

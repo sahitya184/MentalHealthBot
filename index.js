@@ -9,21 +9,21 @@ app.use(bodyParser.json());
 
 // Load environment variables
 const HUGGING_FACE_API_KEY = process.env.HUGGING_FACE_API_KEY;
-console.log("HUGGING_FACE_API_KEY:", HUGGING_FACE_API_KEY);
+const knowledgeBaseFile = "mental_health_tips.json";
+const streakFile = "mood_streaks.json";
 
 if (!HUGGING_FACE_API_KEY) {
-    console.error("Missing Hugging Face API Key! Check your environment variables.");
+    console.error("Missing Hugging Face API Key! Please check your environment variables.");
+    process.exit(1); // Exit the program if no API key
 }
 
-let knowledgeBase;
+// Load the knowledge base (Mental Health Tips)
+let knowledgeBase = [];
 try {
-    knowledgeBase = JSON.parse(fs.readFileSync("mental_health_tips.json", "utf8"));
+    knowledgeBase = JSON.parse(fs.readFileSync(knowledgeBaseFile, "utf8"));
 } catch (error) {
     console.error("Error reading or parsing the knowledge base file:", error.message);
-    knowledgeBase = []; // Fallback to an empty array if the file is invalid or missing
 }
-
-const streakFile = "mood_streaks.json";
 
 // Load mood streaks from a file (Persistent Storage)
 let userMoodStreaks = fs.existsSync(streakFile) ? JSON.parse(fs.readFileSync(streakFile, "utf8")) : {};
@@ -42,16 +42,11 @@ async function getLLMResponse(userInput) {
             { headers: { Authorization: `Bearer ${HUGGING_FACE_API_KEY}`, "Content-Type": "application/json" } }
         );
 
-        // Check if response.data or generated_text is empty or missing
-        if (!response.data || !response.data.generated_text) {
-            console.error("Empty response from Hugging Face API.");
-            return "I hear you. Take a deep breath. 💙";
-        }
-
-        return response.data.generated_text || "You're not alone. I'm here for you. 💙";
+        // Return empathetic response
+        return response.data?.generated_text || "I'm here for you. Let's talk it out. 💙";
     } catch (error) {
-        console.error("Hugging Face API Error:", error.response?.data || error.message);
-        return "I hear you. Take a deep breath. 💙";
+        console.error("Hugging Face API Error:", error.message);
+        return "I'm here for you. Take a deep breath. 💙";
     }
 }
 
@@ -59,38 +54,25 @@ async function getLLMResponse(userInput) {
 function detectSentiment(userInput) {
     const positiveWords = ["happy", "great", "excited", "hopeful"];
     const negativeWords = ["sad", "depressed", "stressed", "anxious"];
-
     const isPositive = positiveWords.some(word => userInput.toLowerCase().includes(word));
     const isNegative = negativeWords.some(word => userInput.toLowerCase().includes(word));
-
     return isPositive ? "positive" : isNegative ? "negative" : "neutral";
 }
 
 // RAG-based response
 function getRAGResponse(userQuery) {
     const mood = detectSentiment(userQuery);
-    const entry = knowledgeBase.find((item) =>
-        item.keywords.some((keyword) => userQuery.toLowerCase().includes(keyword))
-    );
-
+    const entry = knowledgeBase.find(item => item.keywords.some(keyword => userQuery.toLowerCase().includes(keyword)));
     if (!entry) return "I couldn't find specific advice, but I'm always here to support you! 💙";
-
     return mood === "negative" ? entry.negative_response || entry.response
         : mood === "positive" ? entry.positive_response || entry.response
         : entry.response;
 }
 
-// Fetch Joke (For "Cheer Up")
+// Joke for Cheer Up
 async function getJoke() {
     try {
         const jokeResponse = await axios.get("https://official-joke-api.appspot.com/random_joke");
-
-        // Check if jokeResponse.data has both setup and punchline
-        if (!jokeResponse.data || !jokeResponse.data.setup || !jokeResponse.data.punchline) {
-            console.error("Joke API returned incomplete data.");
-            return "Laughter is the best medicine! 😊";
-        }
-
         return `${jokeResponse.data.setup}\n${jokeResponse.data.punchline}`;
     } catch (error) {
         console.error("Error fetching joke:", error);
@@ -98,21 +80,18 @@ async function getJoke() {
     }
 }
 
+// Handle Webhook requests
 app.post("/webhook", async (req, res) => {
     const intentName = req.body.queryResult?.intent?.displayName || "";
     const userMessage = req.body.queryResult?.queryText || "";
     const callbackData = req.body.originalDetectIntentRequest?.payload?.data?.callback_query?.data || "";
     const userId = req.body.session;
 
-    // Check if required fields are missing
     if (!intentName || !userMessage) {
         return res.status(400).json({
             fulfillmentMessages: [{ text: { text: ["Sorry, I didn't understand your request."] } }]
         });
     }
-
-    console.log("Received Intent:", intentName);
-    console.log("Received Callback Data:", callbackData);
 
     try {
         res.setHeader("Content-Type", "application/json");
@@ -220,7 +199,7 @@ app.post("/webhook", async (req, res) => {
             });
         }
 
-        // Voice Message Detection
+        // Handle voice messages
         const voiceMessage = req.body.originalDetectIntentRequest?.payload?.data?.message?.voice;
         if (voiceMessage) {
             return res.json({
@@ -236,5 +215,6 @@ app.post("/webhook", async (req, res) => {
     }
 });
 
+// Start the server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
