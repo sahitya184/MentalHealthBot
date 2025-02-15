@@ -55,17 +55,37 @@ function detectSentiment(userInput) {
 
 // RAG-based response
 function getRAGResponse(userQuery) {
+    console.log("🔍 Received Query:", userQuery);
+
+    // Check if knowledgeBase is defined and is an array
+    if (!Array.isArray(knowledgeBase) || knowledgeBase.length === 0) {
+        console.error("❌ Error: knowledgeBase is missing or empty:", knowledgeBase);
+        return "I'm having trouble retrieving advice right now. Please try again later.";
+    }
+
+    // Detect user sentiment
     const mood = detectSentiment(userQuery);
+    console.log("🧠 Detected Mood:", mood);
+
+    // Find relevant entry in the knowledge base
     const entry = knowledgeBase.find((item) =>
         item.keywords.some((keyword) => userQuery.toLowerCase().includes(keyword))
     );
 
-    if (!entry) return "I couldn't find specific advice, but I'm always here to support you! 💙";
+    // If no relevant entry is found, return fallback response
+    if (!entry) {
+        console.warn("⚠️ No matching entry found for:", userQuery);
+        return "I couldn't find specific advice, but I'm always here to support you! 💙";
+    }
 
-    return mood === "negative" ? entry.negative_response || entry.response
-        : mood === "positive" ? entry.positive_response || entry.response
+    // Return response based on sentiment
+    return mood === "negative"
+        ? entry.negative_response || entry.response
+        : mood === "positive"
+        ? entry.positive_response || entry.response
         : entry.response;
 }
+
 
 // Fetch Joke (For "Cheer Up")
 async function getJoke() {
