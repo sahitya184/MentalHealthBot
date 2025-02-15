@@ -129,18 +129,44 @@ app.post("/webhook", async (req, res) => {
 
         // Get Motivation
         if (intentName === "Get Motivation" || callbackData === "Get Motivation") {
-            const llmResponse = await getLLMResponse(userMessage);
+            const llmResponse = await getLLMResponse(userMessage);  // Get a personalized motivational message from Hugging Face
+            
+            // Increment Mood Streak for each motivation request
             userMoodStreaks[userId] = (userMoodStreaks[userId] || 0) + 1;
             saveMoodStreaks();
 
+            // Generate dynamic response
+            let motivationalMessage = llmResponse;
+            if (!motivationalMessage) {
+                motivationalMessage = "I'm here to support you! 💙 You're doing great! Keep it up! 🌟";  // Fallback message
+            }
+
+            const fullMessage = `
+                Here's a motivational message just for you: 
+                ${motivationalMessage}
+
+                🔥 Keep going strong! You're on a roll! 
+                Mood Streak: ${userMoodStreaks[userId]} days!
+
+                💪 You’ve got this!
+            `;
+
+            // Ensure the response has valid text
+            if (!fullMessage || fullMessage.trim().length === 0) {
+                return res.json({
+                    fulfillmentMessages: [{ text: { text: ["Sorry, I couldn't get a motivational message for you. Please try again later."] } }]
+                });
+            }
+
+            // Returning the response
             return res.json({
                 fulfillmentMessages: [
-                    { text: { text: [llmResponse] } },
+                    { text: { text: [fullMessage] } },
                     {
                         platform: "TELEGRAM",
                         payload: {
                             telegram: {
-                                text: `${llmResponse}\n\n🔥 Mood Streak: ${userMoodStreaks[userId]} days! Keep going!`,
+                                text: fullMessage,
                                 reply_markup: {
                                     inline_keyboard: [
                                         [{ text: "🔄 Get Another", callback_data: "Get Motivation" }],
