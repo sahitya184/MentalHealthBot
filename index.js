@@ -34,7 +34,7 @@ function saveMoodStreaks() {
 }
 
 // Hugging Face API Call with timeout
-async function getLLMResponse(userInput) {
+/*async function getLLMResponse(userInput) {
     try {
         const response = await axios.post(
             "https://api-inference.huggingface.co/models/facebook/blenderbot-400M-distill",
@@ -51,7 +51,27 @@ async function getLLMResponse(userInput) {
         console.error("Hugging Face API Error:", error.message);
         return "I'm here for you. Take a deep breath. 💙";
     }
+}*/
+
+async function getLLMResponse(userMessage) {
+    try {
+        const response = await fetch('https://api-inference.huggingface.co/models/facebook/blenderbot-400M-distill', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer YOUR_HUGGINGFACE_API_KEY`,  // Use your Hugging Face API key
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ inputs: userMessage }),
+        });
+
+        const data = await response.json();
+        return data?.generated_text || "I believe in you! Let me share some words of motivation. 💪";  // Fallback in case of an error or no result
+    } catch (error) {
+        console.error('Error calling Hugging Face API:', error);
+        return "I believe in you! Let me share some words of motivation. 💪";  // Fallback message
+    }
 }
+
 
 // Sentiment Detection
 function detectSentiment(userInput) {
