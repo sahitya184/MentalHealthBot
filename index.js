@@ -47,7 +47,6 @@ try {
 // Export app (if required for deployment)
 module.exports = app;
 
-//const knowledgeBase = JSON.parse(fs.readFileSync("mental_health_tips.json", "utf8"));
 const streakFile = "mood_streaks.json";
 
 // Load mood streaks from a file (Persistent Storage)
@@ -79,7 +78,6 @@ async function getLLMResponse(userInput) {
         return "I hear you. Take a deep breath. 💙";
     }
 }
-
 
 // Sentiment Detection
 function detectSentiment(userInput) {
@@ -124,7 +122,6 @@ function getRAGResponse(userQuery) {
         ? entry.positive_response || entry.response
         : entry.response;
 }
-
 
 // Fetch Joke (For "Cheer Up")
 async function getJoke() {
