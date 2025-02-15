@@ -67,12 +67,19 @@ async function getLLMResponse(userInput) {
             { headers: { Authorization: `Bearer ${HUGGING_FACE_API_KEY}`, "Content-Type": "application/json" } }
         );
 
-        return response.data.generated_text || "You're not alone. I'm here for you. 💙";
+        // Check if response data exists and is in the expected format
+        if (response.data && response.data.generated_text) {
+            return response.data.generated_text || "You're not alone. I'm here for you. 💙";
+        } else {
+            console.error("🚨 Invalid or empty response from Hugging Face API:", response.data);
+            return "I hear you. Take a deep breath. 💙";
+        }
     } catch (error) {
         console.error("Hugging Face API Error:", error.response?.data || error.message);
         return "I hear you. Take a deep breath. 💙";
     }
 }
+
 
 // Sentiment Detection
 function detectSentiment(userInput) {
