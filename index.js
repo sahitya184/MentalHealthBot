@@ -12,41 +12,10 @@ const HUGGING_FACE_API_KEY = process.env.HUGGING_FACE_API_KEY;
 console.log("HUGGING_FACE_API_KEY:", HUGGING_FACE_API_KEY);
 
 if (!HUGGING_FACE_API_KEY) {
-    console.error("🚨 Missing Hugging Face API Key! Check your environment variables.");
+    console.error("Missing Hugging Face API Key! Check your environment variables.");
 }
 
-// Define knowledge base path
-const knowledgeBasePath = "mental_health_tips.json";
-
-// Step 1: Check if file exists
-if (!fs.existsSync(knowledgeBasePath)) {
-    console.error("🚨 Error: Knowledge base file not found!");
-    process.exit(1);
-}
-
-// Step 2: Read file content
-const fileContent = fs.readFileSync(knowledgeBasePath, "utf8");
-
-// Step 3: Check if file is empty
-if (!fileContent.trim()) {
-    console.error("🚨 Error: Knowledge base file is empty!");
-    process.exit(1);
-}
-
-// Step 4: Parse JSON
-let knowledgeBase;
-try {
-    knowledgeBase = JSON.parse(fileContent);
-    console.log("✅ JSON Parsed Successfully");
-} catch (error) {
-    console.error("🚨 JSON Parsing Error:", error.message);
-    console.error("📝 Raw File Content:", fileContent);
-    process.exit(1);
-}
-
-// Export app (if required for deployment)
-module.exports = app;
-
+const knowledgeBase = JSON.parse(fs.readFileSync("mental_health_tips.json", "utf8"));
 const streakFile = "mood_streaks.json";
 
 // Load mood streaks from a file (Persistent Storage)
@@ -66,13 +35,7 @@ async function getLLMResponse(userInput) {
             { headers: { Authorization: `Bearer ${HUGGING_FACE_API_KEY}`, "Content-Type": "application/json" } }
         );
 
-        // Check if response data exists and is in the expected format
-        if (response.data && response.data.generated_text) {
-            return response.data.generated_text || "You're not alone. I'm here for you. 💙";
-        } else {
-            console.error("🚨 Invalid or empty response from Hugging Face API:", response.data);
-            return "I hear you. Take a deep breath. 💙";
-        }
+        return response.data.generated_text || "You're not alone. I'm here for you. 💙";
     } catch (error) {
         console.error("Hugging Face API Error:", error.response?.data || error.message);
         return "I hear you. Take a deep breath. 💙";
@@ -92,34 +55,15 @@ function detectSentiment(userInput) {
 
 // RAG-based response
 function getRAGResponse(userQuery) {
-    console.log("🔍 Received Query:", userQuery);
-
-    // Check if knowledgeBase is defined and is an array
-    if (!Array.isArray(knowledgeBase) || knowledgeBase.length === 0) {
-        console.error("❌ Error: knowledgeBase is missing or empty:", knowledgeBase);
-        return "I'm having trouble retrieving advice right now. Please try again later.";
-    }
-
-    // Detect user sentiment
     const mood = detectSentiment(userQuery);
-    console.log("🧠 Detected Mood:", mood);
-
-    // Find relevant entry in the knowledge base
     const entry = knowledgeBase.find((item) =>
         item.keywords.some((keyword) => userQuery.toLowerCase().includes(keyword))
     );
 
-    // If no relevant entry is found, return fallback response
-    if (!entry) {
-        console.warn("⚠️ No matching entry found for:", userQuery);
-        return "I couldn't find specific advice, but I'm always here to support you! 💙";
-    }
+    if (!entry) return "I couldn't find specific advice, but I'm always here to support you! 💙";
 
-    // Return response based on sentiment
-    return mood === "negative"
-        ? entry.negative_response || entry.response
-        : mood === "positive"
-        ? entry.positive_response || entry.response
+    return mood === "negative" ? entry.negative_response || entry.response
+        : mood === "positive" ? entry.positive_response || entry.response
         : entry.response;
 }
 
