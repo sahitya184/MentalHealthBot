@@ -20,17 +20,25 @@ const knowledgeBase = JSON.parse(fs.readFileSync("mental_health_tips.json", "utf
 let userMoodStreaks = {};
 
 // Function to call Hugging Face API for LLM-based responses
+const huggingFaceAPIKey = process.env.HUGGINGFACE_API_KEY; // Load API key from .env
+
 async function getLLMResponse(userInput) {
     try {
         const response = await axios.post(
             "https://api-inference.huggingface.co/models/facebook/blenderbot-400M-distill",
             { inputs: userInput },
-            { headers: { Authorization: `Bearer ${HUGGING_FACE_API_KEY}` } }
+            {
+                headers: {
+                    Authorization: `Bearer ${huggingFaceAPIKey}`,
+                    "Content-Type": "application/json"
+                }
+            }
         );
-        return response.data.generated_text || "I'm here to support you. Keep going! 💙";
+
+        return response.data.generated_text || "You're not alone. I'm here for you. 💙";
     } catch (error) {
-        console.error("Error with Hugging Face API:", error);
-        return "I'm here to listen. How can I support you today? 💙";
+        console.error("Hugging Face API Error:", error);
+        return "I hear you. Take a deep breath. 💙";
     }
 }
 
