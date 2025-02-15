@@ -15,7 +15,15 @@ if (!HUGGING_FACE_API_KEY) {
     console.error("Missing Hugging Face API Key! Check your environment variables.");
 }
 
-const knowledgeBase = JSON.parse(fs.readFileSync("mental_health_tips.json", "utf8"));
+let knowledgeBase;
+try {
+    knowledgeBase = JSON.parse(fs.readFileSync("mental_health_tips.json", "utf8"));
+} catch (error) {
+    console.error("Error reading or parsing the knowledge base file:", error.message);
+    knowledgeBase = []; // Fallback to an empty array if the file is invalid or missing
+}
+
+//const knowledgeBase = JSON.parse(fs.readFileSync("mental_health_tips.json", "utf8"));
 const streakFile = "mood_streaks.json";
 
 // Load mood streaks from a file (Persistent Storage)
@@ -35,12 +43,19 @@ async function getLLMResponse(userInput) {
             { headers: { Authorization: `Bearer ${HUGGING_FACE_API_KEY}`, "Content-Type": "application/json" } }
         );
 
+        // Check if response.data or generated_text is empty or missing
+        if (!response.data || !response.data.generated_text) {
+            console.error("Empty response from Hugging Face API.");
+            return "I hear you. Take a deep breath. 💙";
+        }
+
         return response.data.generated_text || "You're not alone. I'm here for you. 💙";
     } catch (error) {
         console.error("Hugging Face API Error:", error.response?.data || error.message);
         return "I hear you. Take a deep breath. 💙";
     }
 }
+
 
 // Sentiment Detection
 function detectSentiment(userInput) {
@@ -71,6 +86,13 @@ function getRAGResponse(userQuery) {
 async function getJoke() {
     try {
         const jokeResponse = await axios.get("https://official-joke-api.appspot.com/random_joke");
+
+        // Check if jokeResponse.data has both setup and punchline
+        if (!jokeResponse.data || !jokeResponse.data.setup || !jokeResponse.data.punchline) {
+            console.error("Joke API returned incomplete data.");
+            return "Laughter is the best medicine! 😊";
+        }
+
         return `${jokeResponse.data.setup}\n${jokeResponse.data.punchline}`;
     } catch (error) {
         console.error("Error fetching joke:", error);
@@ -79,10 +101,17 @@ async function getJoke() {
 }
 
 app.post("/webhook", async (req, res) => {
-    const intentName = req.body.queryResult.intent.displayName;
-    const userMessage = req.body.queryResult.queryText;
+    const intentName = req.body.queryResult?.intent?.displayName || "";
+    const userMessage = req.body.queryResult?.queryText || "";
     const callbackData = req.body.originalDetectIntentRequest?.payload?.data?.callback_query?.data || "";
     const userId = req.body.session;
+
+// Check if required fields are missing
+if (!intentName || !userMessage) {
+    return res.status(400).json({
+        fulfillmentMessages: [{ text: { text: ["Sorry, I didn't understand your request."] } }]
+    });
+
 
     console.log("Received Intent:", intentName);
     console.log("Received Callback Data:", callbackData);
