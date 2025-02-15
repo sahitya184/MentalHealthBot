@@ -12,11 +12,10 @@ const HUGGING_FACE_API_KEY = process.env.HUGGING_FACE_API_KEY;
 console.log("HUGGING_FACE_API_KEY:", HUGGING_FACE_API_KEY);
 
 if (!HUGGING_FACE_API_KEY) {
-    console.error("Missing Hugging Face API Key! Check your environment variables.");
+    console.error("🚨 Missing Hugging Face API Key! Check your environment variables.");
 }
 
-//const fs = require("fs");
-
+// Define knowledge base path
 const knowledgeBasePath = "mental_health_tips.json";
 
 // Step 1: Check if file exists
@@ -27,7 +26,6 @@ if (!fs.existsSync(knowledgeBasePath)) {
 
 // Step 2: Read file content
 const fileContent = fs.readFileSync(knowledgeBasePath, "utf8");
-console.log("📂 File Content:", fileContent); // Debugging line
 
 // Step 3: Check if file is empty
 if (!fileContent.trim()) {
@@ -45,6 +43,9 @@ try {
     console.error("📝 Raw File Content:", fileContent);
     process.exit(1);
 }
+
+// Export app (if required for deployment)
+module.exports = app;
 
 //const knowledgeBase = JSON.parse(fs.readFileSync("mental_health_tips.json", "utf8"));
 const streakFile = "mood_streaks.json";
