@@ -9,6 +9,8 @@ app.use(bodyParser.json());
 
 // Load environment variables
 const HUGGING_FACE_API_KEY = process.env.HUGGING_FACE_API_KEY;
+console.log("HUGGING_FACE_API_KEY:", HUGGING_FACE_API_KEY);
+
 if (!HUGGING_FACE_API_KEY) {
     console.error("Missing Hugging Face API Key! Check your environment variables.");
 }
@@ -24,70 +26,51 @@ function saveMoodStreaks() {
     fs.writeFileSync(streakFile, JSON.stringify(userMoodStreaks, null, 2));
 }
 
-// Function to call Hugging Face API with timeout
+// Hugging Face API Call
 async function getLLMResponse(userInput) {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 4000); // 4s timeout
-
     try {
         const response = await axios.post(
             "https://api-inference.huggingface.co/models/facebook/blenderbot-400M-distill",
             { inputs: userInput },
-            {
-                headers: { Authorization: `Bearer ${HUGGING_FACE_API_KEY}`, "Content-Type": "application/json" },
-                signal: controller.signal, // Attach signal for timeout
-            }
+            { headers: { Authorization: `Bearer ${HUGGING_FACE_API_KEY}`, "Content-Type": "application/json" } }
         );
 
-        clearTimeout(timeout);
-
-        // Handle response format for different Hugging Face models
-        if (Array.isArray(response.data) && response.data.length > 0) {
-            return response.data[0].generated_text || "You're not alone. I'm here for you. 💙";
-        } else if (response.data.generated_text) {
-            return response.data.generated_text;
-        }
-
-        return "You're not alone. I'm here for you. 💙";
+        return response.data.generated_text || "You're not alone. I'm here for you. 💙";
     } catch (error) {
         console.error("Hugging Face API Error:", error.response?.data || error.message);
-        return "I hear you. Take a deep breath. 💙"; // Fallback response
+        return "I hear you. Take a deep breath. 💙";
     }
 }
 
-// Function to analyze sentiment (Basic Version)
+// Sentiment Detection
 function detectSentiment(userInput) {
     const positiveWords = ["happy", "great", "excited", "hopeful"];
     const negativeWords = ["sad", "depressed", "stressed", "anxious"];
-    
+
     const isPositive = positiveWords.some(word => userInput.toLowerCase().includes(word));
     const isNegative = negativeWords.some(word => userInput.toLowerCase().includes(word));
 
     return isPositive ? "positive" : isNegative ? "negative" : "neutral";
 }
 
-// Function to provide RAG-based personalized responses
+// RAG-based response
 function getRAGResponse(userQuery) {
     const mood = detectSentiment(userQuery);
-    const entry = knowledgeBase.find((item) => 
+    const entry = knowledgeBase.find((item) =>
         item.keywords.some((keyword) => userQuery.toLowerCase().includes(keyword))
     );
 
     if (!entry) return "I couldn't find specific advice, but I'm always here to support you! 💙";
-    
+
     return mood === "negative" ? entry.negative_response || entry.response
-         : mood === "positive" ? entry.positive_response || entry.response
-         : entry.response;
+        : mood === "positive" ? entry.positive_response || entry.response
+        : entry.response;
 }
 
-// Function to fetch a joke with timeout (✔ Restored "Cheer Up" Intent)
+// Fetch Joke (For "Cheer Up")
 async function getJoke() {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 4000); // 4s timeout
-
     try {
-        const jokeResponse = await axios.get("https://official-joke-api.appspot.com/random_joke", { signal: controller.signal });
-        clearTimeout(timeout);
+        const jokeResponse = await axios.get("https://official-joke-api.appspot.com/random_joke");
         return `${jokeResponse.data.setup}\n${jokeResponse.data.punchline}`;
     } catch (error) {
         console.error("Error fetching joke:", error);
@@ -107,14 +90,15 @@ app.post("/webhook", async (req, res) => {
     try {
         res.setHeader("Content-Type", "application/json");
 
-        // Welcome Intent (Main Menu)
+        // Welcome Intent (Proactive Message)
         if (intentName === "Welcome Intent") {
-            userMoodStreaks[userId] = 0; // Reset streak
+            userMoodStreaks[userId] = 0;
             saveMoodStreaks();
 
             return res.json({
                 fulfillmentMessages: [
-                    { text: { text: ["Hello there! 👋 I'm your Mental Health Support Bot. 💙"] } },
+                    { text: { text: ["Hello! 👋 I'm here to support your mental health. 💙"] } },
+                    { text: { text: ["I can help you with:\n✅ Motivation\n😊 Cheer Up with Jokes\n🌱 Coping Strategies\n💭 Share Your Feelings"] } },
                     {
                         platform: "TELEGRAM",
                         payload: {
@@ -125,6 +109,8 @@ app.post("/webhook", async (req, res) => {
                                         [{ text: "💪 Get Motivation", callback_data: "Get Motivation" }],
                                         [{ text: "😊 Cheer Up", callback_data: "Cheer Up" }],
                                         [{ text: "🌱 Coping Strategies", callback_data: "Coping Strategies" }],
+                                        [{ text: "💬 Share My Feelings", callback_data: "Share My Feelings" }],
+                                        [{ text: "📅 Daily Mood Check-in", callback_data: "Daily Mood Check-in" }],
                                         [{ text: "❌ End Chat", callback_data: "End Chat" }]
                                     ]
                                 },
@@ -135,7 +121,7 @@ app.post("/webhook", async (req, res) => {
             });
         }
 
-        // Get Motivation (LLM + Mood Streaks)
+        // Get Motivation
         if (intentName === "Get Motivation" || callbackData === "Get Motivation") {
             const llmResponse = await getLLMResponse(userMessage);
             userMoodStreaks[userId] = (userMoodStreaks[userId] || 0) + 1;
@@ -162,7 +148,7 @@ app.post("/webhook", async (req, res) => {
             });
         }
 
-        // Cheer Up (✔ Restored "Cheer Up" Intent)
+        // Cheer Up
         if (intentName === "Cheer Up" || callbackData === "Cheer Up") {
             const joke = await getJoke();
 
@@ -194,6 +180,15 @@ app.post("/webhook", async (req, res) => {
             return res.json({
                 fulfillmentMessages: [
                     { text: { text: [strategy] } }
+                ],
+            });
+        }
+
+        // Share My Feelings
+        if (intentName === "Share My Feelings" || callbackData === "Share My Feelings") {
+            return res.json({
+                fulfillmentMessages: [
+                    { text: { text: ["I'm here to listen. How are you feeling today? 💙"] } }
                 ],
             });
         }
