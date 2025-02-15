@@ -15,7 +15,38 @@ if (!HUGGING_FACE_API_KEY) {
     console.error("Missing Hugging Face API Key! Check your environment variables.");
 }
 
-const knowledgeBase = JSON.parse(fs.readFileSync("mental_health_tips.json", "utf8"));
+const fs = require("fs");
+
+const knowledgeBasePath = "mental_health_tips.json";
+
+// Step 1: Check if file exists
+if (!fs.existsSync(knowledgeBasePath)) {
+    console.error("🚨 Error: Knowledge base file not found!");
+    process.exit(1);
+}
+
+// Step 2: Read file content
+const fileContent = fs.readFileSync(knowledgeBasePath, "utf8");
+console.log("📂 File Content:", fileContent); // Debugging line
+
+// Step 3: Check if file is empty
+if (!fileContent.trim()) {
+    console.error("🚨 Error: Knowledge base file is empty!");
+    process.exit(1);
+}
+
+// Step 4: Parse JSON
+let knowledgeBase;
+try {
+    knowledgeBase = JSON.parse(fileContent);
+    console.log("✅ JSON Parsed Successfully");
+} catch (error) {
+    console.error("🚨 JSON Parsing Error:", error.message);
+    console.error("📝 Raw File Content:", fileContent);
+    process.exit(1);
+}
+
+//const knowledgeBase = JSON.parse(fs.readFileSync("mental_health_tips.json", "utf8"));
 const streakFile = "mood_streaks.json";
 
 // Load mood streaks from a file (Persistent Storage)
