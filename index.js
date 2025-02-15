@@ -15,7 +15,7 @@ if (!HUGGING_FACE_API_KEY) {
     console.error("Missing Hugging Face API Key! Check your environment variables.");
 }
 
-const fs = require("fs");
+//const fs = require("fs");
 
 const knowledgeBasePath = "mental_health_tips.json";
 
