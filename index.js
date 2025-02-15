@@ -23,7 +23,6 @@ try {
     knowledgeBase = []; // Fallback to an empty array if the file is invalid or missing
 }
 
-//const knowledgeBase = JSON.parse(fs.readFileSync("mental_health_tips.json", "utf8"));
 const streakFile = "mood_streaks.json";
 
 // Load mood streaks from a file (Persistent Storage)
@@ -55,7 +54,6 @@ async function getLLMResponse(userInput) {
         return "I hear you. Take a deep breath. 💙";
     }
 }
-
 
 // Sentiment Detection
 function detectSentiment(userInput) {
@@ -106,12 +104,12 @@ app.post("/webhook", async (req, res) => {
     const callbackData = req.body.originalDetectIntentRequest?.payload?.data?.callback_query?.data || "";
     const userId = req.body.session;
 
-// Check if required fields are missing
-if (!intentName || !userMessage) {
-    return res.status(400).json({
-        fulfillmentMessages: [{ text: { text: ["Sorry, I didn't understand your request."] } }]
-    });
-}
+    // Check if required fields are missing
+    if (!intentName || !userMessage) {
+        return res.status(400).json({
+            fulfillmentMessages: [{ text: { text: ["Sorry, I didn't understand your request."] } }]
+        });
+    }
 
     console.log("Received Intent:", intentName);
     console.log("Received Callback Data:", callbackData);
