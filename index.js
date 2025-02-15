@@ -2,16 +2,23 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const axios = require("axios");
 const fs = require("fs");
+require("dotenv").config();
 
 const app = express();
 app.use(bodyParser.json());
 
-require("dotenv").config(); // Load environment variables
-
+// Load environment variables
 const HUGGING_FACE_API_KEY = process.env.HUGGING_FACE_API_KEY;
 const knowledgeBase = JSON.parse(fs.readFileSync("mental_health_tips.json", "utf8"));
+const streakFile = "mood_streaks.json";
 
-let userMoodStreaks = {}; // Temporary storage
+// Load mood streaks from a file (Persistent Storage)
+let userMoodStreaks = fs.existsSync(streakFile) ? JSON.parse(fs.readFileSync(streakFile, "utf8")) : {};
+
+// Function to save streaks persistently
+function saveMoodStreaks() {
+    fs.writeFileSync(streakFile, JSON.stringify(userMoodStreaks, null, 2));
+}
 
 // Function to call Hugging Face API with timeout
 async function getLLMResponse(userInput) {
@@ -36,10 +43,29 @@ async function getLLMResponse(userInput) {
     }
 }
 
-// Function to provide RAG-based responses
+// Function to analyze sentiment (Basic Version)
+function detectSentiment(userInput) {
+    const positiveWords = ["happy", "great", "excited", "hopeful"];
+    const negativeWords = ["sad", "depressed", "stressed", "anxious"];
+    
+    const isPositive = positiveWords.some(word => userInput.toLowerCase().includes(word));
+    const isNegative = negativeWords.some(word => userInput.toLowerCase().includes(word));
+
+    return isPositive ? "positive" : isNegative ? "negative" : "neutral";
+}
+
+// Function to provide RAG-based personalized responses
 function getRAGResponse(userQuery) {
-    const entry = knowledgeBase.find((item) => item.keywords.some((keyword) => userQuery.toLowerCase().includes(keyword)));
-    return entry ? entry.response : "I couldn't find specific advice, but I'm always here to support you! 💙";
+    const mood = detectSentiment(userQuery);
+    const entry = knowledgeBase.find((item) => 
+        item.keywords.some((keyword) => userQuery.toLowerCase().includes(keyword))
+    );
+
+    if (!entry) return "I couldn't find specific advice, but I'm always here to support you! 💙";
+    
+    return mood === "negative" ? entry.negative_response || entry.response
+         : mood === "positive" ? entry.positive_response || entry.response
+         : entry.response;
 }
 
 // Function to fetch a joke with timeout
@@ -72,6 +98,8 @@ app.post("/webhook", async (req, res) => {
         // Welcome Intent (Main Menu)
         if (intentName === "Welcome Intent") {
             userMoodStreaks[userId] = 0; // Reset streak
+            saveMoodStreaks();
+
             return res.json({
                 fulfillmentMessages: [
                     { text: { text: ["Hello there! 👋 I'm your Mental Health Support Bot. 💙"] } },
@@ -95,10 +123,11 @@ app.post("/webhook", async (req, res) => {
             });
         }
 
-        // Get Motivation (LLM-based)
+        // Get Motivation (LLM + Mood Streaks)
         if (intentName === "Get Motivation" || callbackData === "Get Motivation") {
-            const llmResponse = await getLLMResponse("I need motivation");
+            const llmResponse = await getLLMResponse(userMessage);
             userMoodStreaks[userId] = (userMoodStreaks[userId] || 0) + 1;
+            saveMoodStreaks();
 
             return res.json({
                 fulfillmentMessages: [
@@ -121,43 +150,18 @@ app.post("/webhook", async (req, res) => {
             });
         }
 
-        // Cheer Up (Jokes)
-        if (intentName === "Cheer Up" || callbackData === "Cheer Up") {
-            const joke = await getJoke();
-
-            return res.json({
-                fulfillmentMessages: [
-                    { text: { text: [joke] } },
-                    {
-                        platform: "TELEGRAM",
-                        payload: {
-                            telegram: {
-                                text: joke,
-                                reply_markup: {
-                                    inline_keyboard: [
-                                        [{ text: "🤣 Another One!", callback_data: "Cheer Up" }],
-                                        [{ text: "🏠 Main Menu", callback_data: "Welcome Intent" }]
-                                    ]
-                                },
-                            },
-                        },
-                    }
-                ],
-            });
-        }
-
         // Coping Strategies (RAG-based)
         if (intentName === "Coping Strategies" || callbackData === "Coping Strategies") {
-            const strategy = getRAGResponse("coping strategies");
+            const strategy = getRAGResponse(userMessage);
 
             return res.json({
                 fulfillmentMessages: [
-                    { text: { text: [strategy || "Sorry, I couldn't find a coping strategy."] } },
+                    { text: { text: [strategy] } },
                     {
                         platform: "TELEGRAM",
                         payload: {
                             telegram: {
-                                text: strategy || "Sorry, I couldn't find a coping strategy.",
+                                text: strategy,
                                 reply_markup: {
                                     inline_keyboard: [
                                         [{ text: "🌱 Another Tip", callback_data: "Coping Strategies" }],
@@ -171,38 +175,11 @@ app.post("/webhook", async (req, res) => {
             });
         }
 
-        // Handling Voice Messages
+        // Voice Message Detection
         const voiceMessage = req.body.originalDetectIntentRequest?.payload?.data?.message?.voice;
         if (voiceMessage) {
             return res.json({
-                fulfillmentMessages: [
-                    { text: { text: ["I heard your voice message! While I can’t process audio yet, I'm here to support you. 💙"] } },
-                    {
-                        platform: "TELEGRAM",
-                        payload: {
-                            telegram: {
-                                text: "Try typing your message, and I'll do my best to help! 😊",
-                            },
-                        },
-                    }
-                ],
-            });
-        }
-
-        // End Chat
-        if (callbackData === "End Chat") {
-            return res.json({
-                fulfillmentMessages: [
-                    { text: { text: ["Chat ended. If you need support again, just type *'start'* to begin a new conversation. 💙"] } },
-                    {
-                        platform: "TELEGRAM",
-                        payload: {
-                            telegram: {
-                                text: "Chat ended. If you need support again, just type *'start'*. Take care! 💙",
-                            },
-                        },
-                    }
-                ],
+                fulfillmentMessages: [{ text: { text: ["I heard your voice message! 💙"] } }]
             });
         }
 
