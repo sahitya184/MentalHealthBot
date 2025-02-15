@@ -1,14 +1,57 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const axios = require("axios");
+const fs = require("fs");
 
 const app = express();
 app.use(bodyParser.json());
 
+require("dotenv").config(); // Load environment variables
+
+const HUGGING_FACE_API_KEY = process.env.HUGGING_FACE_API_KEY;
+
+
+//const HUGGING_FACE_API_KEY = "your_hugging_face_api_key"; // Replace with your Hugging Face API Key
+
+// Load knowledge base for RAG (Example: JSON file)
+const knowledgeBase = JSON.parse(fs.readFileSync("mental_health_tips.json", "utf8"));
+
+// Store user mood streaks (Temporary storage)
+let userMoodStreaks = {};
+
+// Function to call Hugging Face API for LLM-based responses
+async function getLLMResponse(userInput) {
+    try {
+        const response = await axios.post(
+            "https://api-inference.huggingface.co/models/facebook/blenderbot-400M-distill",
+            { inputs: userInput },
+            { headers: { Authorization: `Bearer ${HUGGING_FACE_API_KEY}` } }
+        );
+        return response.data.generated_text || "I'm here to support you. Keep going! 💙";
+    } catch (error) {
+        console.error("Error with Hugging Face API:", error);
+        return "I'm here to listen. How can I support you today? 💙";
+    }
+}
+
+// Function to provide RAG-based responses
+function getRAGResponse(userQuery) {
+    const entry = knowledgeBase.find((item) => item.keywords.some((keyword) => userQuery.toLowerCase().includes(keyword)));
+    return entry ? entry.response : "I couldn't find specific advice, but I'm always here to support you! 💙";
+}
+
+// Function to detect sentiment
+function detectSentiment(text) {
+    const negativeWords = ["sad", "depressed", "anxious", "stressed", "hopeless", "lonely"];
+    return negativeWords.some((word) => text.toLowerCase().includes(word)) ? "negative" : "positive";
+}
+
 app.post("/webhook", async (req, res) => {
     const intentName = req.body.queryResult.intent.displayName;
+    const userMessage = req.body.queryResult.queryText;
     const callbackData = req.body.originalDetectIntentRequest?.payload?.data?.callback_query?.data || "";
-    
+    const userId = req.body.session;
+
     console.log("Received Intent:", intentName);
     console.log("Received Callback Data:", callbackData);
 
@@ -17,6 +60,7 @@ app.post("/webhook", async (req, res) => {
 
         // Welcome Intent (Main Menu)
         if (intentName === "Welcome Intent") {
+            userMoodStreaks[userId] = 0; // Reset streaks when a user starts a chat
             return res.json({
                 fulfillmentMessages: [
                     { text: { text: ["Hello there! 👋 I'm your Mental Health Support Bot. 💙"] } },
@@ -24,13 +68,13 @@ app.post("/webhook", async (req, res) => {
                         platform: "TELEGRAM",
                         payload: {
                             telegram: {
-                                text: "How can I help you today? 😊",
+                                text: "How can I support you today? 😊",
                                 reply_markup: {
                                     inline_keyboard: [
                                         [{ text: "💪 Get Motivation", callback_data: "Get Motivation" }],
                                         [{ text: "😊 Cheer Up", callback_data: "Cheer Up" }],
                                         [{ text: "🌱 Coping Strategies", callback_data: "Coping Strategies" }],
-                                        //[{ text: "❌ End Chat", callback_data: "End Chat" }]
+                                        [{ text: "❌ End Chat", callback_data: "End Chat" }]
                                     ]
                                 },
                             },
@@ -40,37 +84,30 @@ app.post("/webhook", async (req, res) => {
             });
         }
 
-        // Get Motivation
+        // Get Motivation (LLM-based)
         if (intentName === "Get Motivation" || callbackData === "Get Motivation") {
-            try {
-                const response = await axios.get("https://zenquotes.io/api/random");
-                const quoteData = response.data[0];
-                const quote = quoteData.q || "You’re stronger than you think! Keep going. 💪";
-                const author = quoteData.a || "Unknown";
+            const llmResponse = await getLLMResponse("I need motivation");
+            userMoodStreaks[userId] = (userMoodStreaks[userId] || 0) + 1; // Increase mood streak
 
-                return res.json({
-                    fulfillmentMessages: [
-                        { text: { text: [`"${quote}" – ${author}`] } },
-                        {
-                            platform: "TELEGRAM",
-                            payload: {
-                                telegram: {
-                                    text: `"${quote}" – ${author}`,
-                                    reply_markup: {
-                                        inline_keyboard: [
-                                            [{ text: "🔄 Get Another", callback_data: "Get Motivation" }],
-                                            //[{ text: "❌ End Chat", callback_data: "End Chat" }]
-                                        ]
-                                    },
+            return res.json({
+                fulfillmentMessages: [
+                    { text: { text: [llmResponse] } },
+                    {
+                        platform: "TELEGRAM",
+                        payload: {
+                            telegram: {
+                                text: `${llmResponse}\n\n🔥 Mood Streak: ${userMoodStreaks[userId]} days! Keep going!`,
+                                reply_markup: {
+                                    inline_keyboard: [
+                                        [{ text: "🔄 Get Another", callback_data: "Get Motivation" }],
+                                        [{ text: "🏠 Main Menu", callback_data: "Welcome Intent" }]
+                                    ]
                                 },
                             },
-                        }
-                    ],
-                });
-            } catch (error) {
-                console.error("Error fetching motivation:", error);
-                return res.json({ fulfillmentMessages: [{ text: { text: ["Keep pushing forward! You're doing amazing. 💪"] } }] });
-            }
+                        },
+                    }
+                ],
+            });
         }
 
         // Cheer Up (Jokes)
@@ -90,7 +127,7 @@ app.post("/webhook", async (req, res) => {
                                     reply_markup: {
                                         inline_keyboard: [
                                             [{ text: "🤣 Another One!", callback_data: "Cheer Up" }],
-                                            //[{ text: "❌ End Chat", callback_data: "End Chat" }]
+                                            [{ text: "🏠 Main Menu", callback_data: "Welcome Intent" }]
                                         ]
                                     },
                                 },
@@ -100,36 +137,26 @@ app.post("/webhook", async (req, res) => {
                 });
             } catch (error) {
                 console.error("Error fetching joke:", error);
-                return res.json({ fulfillmentMessages: [{ text: { text: ["Laughter is the best medicine! Here's a smile for you. 😊"] } }] });
+                return res.json({ fulfillmentMessages: [{ text: { text: ["Laughter is the best medicine! 😊"] } }] });
             }
         }
 
-        // Coping Strategies
+        // Coping Strategies (RAG-based)
         if (intentName === "Coping Strategies" || callbackData === "Coping Strategies") {
-            const strategies = [
-                "Take deep breaths and count to 10. 🧘‍♀️",
-                "Go for a short walk outside. 🌿",
-                "Write down your thoughts in a journal. ✍️",
-                "Listen to your favorite calming music. 🎵",
-                "Talk to someone you trust. 💙",
-                "Try a short meditation session. 🧘",
-                "Drink a glass of water and take a deep breath. 💧"
-            ];
-
-            const randomStrategy = strategies[Math.floor(Math.random() * strategies.length)];
+            const strategy = getRAGResponse("coping strategies");
 
             return res.json({
                 fulfillmentMessages: [
-                    { text: { text: [randomStrategy] } },
+                    { text: { text: [strategy] } },
                     {
                         platform: "TELEGRAM",
                         payload: {
                             telegram: {
-                                text: randomStrategy,
+                                text: strategy,
                                 reply_markup: {
                                     inline_keyboard: [
                                         [{ text: "🌱 Another Tip", callback_data: "Coping Strategies" }],
-                                        //[{ text: "❌ End Chat", callback_data: "End Chat" }]
+                                        [{ text: "🏠 Main Menu", callback_data: "Welcome Intent" }]
                                     ]
                                 },
                             },
@@ -139,16 +166,17 @@ app.post("/webhook", async (req, res) => {
             });
         }
 
-        // Back to Menu (Modified: Now Shows Restart Instructions)
-        /*if (callbackData === "Back to Menu") {
+        // Handling Voice Messages
+        const voiceMessage = req.body.originalDetectIntentRequest?.payload?.data?.message?.voice;
+        if (voiceMessage) {
             return res.json({
                 fulfillmentMessages: [
-                    { text: { text: ["If you'd like to start over, just type *'start'* in the chat! 😊"] } },
+                    { text: { text: ["I heard your voice message! While I can’t process audio yet, I'm here to support you. 💙"] } },
                     {
                         platform: "TELEGRAM",
                         payload: {
                             telegram: {
-                                text: "To restart the chat, type *'start'*. I'm always here to help! 💙",
+                                text: "Try typing your message, and I'll do my best to help! 😊",
                             },
                         },
                     }
@@ -156,7 +184,7 @@ app.post("/webhook", async (req, res) => {
             });
         }
 
-        // End Chat (Modified: Now Shows End Message)
+        // End Chat
         if (callbackData === "End Chat") {
             return res.json({
                 fulfillmentMessages: [
@@ -165,13 +193,13 @@ app.post("/webhook", async (req, res) => {
                         platform: "TELEGRAM",
                         payload: {
                             telegram: {
-                                text: "Chat ended. If you need support again, just type *'start'* anytime. Take care! 💙",
+                                text: "Chat ended. If you need support again, just type *'start'*. Take care! 💙",
                             },
                         },
                     }
                 ],
             });
-        }*/
+        }
 
         return res.json({ fulfillmentMessages: [{ text: { text: ["I'm here for you. Let me know how I can help! 💙"] } }] });
 
