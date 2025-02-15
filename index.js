@@ -111,7 +111,7 @@ if (!intentName || !userMessage) {
     return res.status(400).json({
         fulfillmentMessages: [{ text: { text: ["Sorry, I didn't understand your request."] } }]
     });
-
+}
 
     console.log("Received Intent:", intentName);
     console.log("Received Callback Data:", callbackData);
