@@ -9,6 +9,10 @@ app.use(bodyParser.json());
 
 // Load environment variables
 const HUGGING_FACE_API_KEY = process.env.HUGGING_FACE_API_KEY;
+if (!HUGGING_FACE_API_KEY) {
+    console.error("Missing Hugging Face API Key! Check your environment variables.");
+}
+
 const knowledgeBase = JSON.parse(fs.readFileSync("mental_health_tips.json", "utf8"));
 const streakFile = "mood_streaks.json";
 
@@ -36,9 +40,17 @@ async function getLLMResponse(userInput) {
         );
 
         clearTimeout(timeout);
-        return response.data.generated_text || "You're not alone. I'm here for you. 💙";
+
+        // Handle response format for different Hugging Face models
+        if (Array.isArray(response.data) && response.data.length > 0) {
+            return response.data[0].generated_text || "You're not alone. I'm here for you. 💙";
+        } else if (response.data.generated_text) {
+            return response.data.generated_text;
+        }
+
+        return "You're not alone. I'm here for you. 💙";
     } catch (error) {
-        console.error("Hugging Face API Timeout/Error:", error);
+        console.error("Hugging Face API Error:", error.response?.data || error.message);
         return "I hear you. Take a deep breath. 💙"; // Fallback response
     }
 }
@@ -68,7 +80,7 @@ function getRAGResponse(userQuery) {
          : entry.response;
 }
 
-// Function to fetch a joke with timeout
+// Function to fetch a joke with timeout (✔ Restored "Cheer Up" Intent)
 async function getJoke() {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 4000); // 4s timeout
@@ -150,27 +162,38 @@ app.post("/webhook", async (req, res) => {
             });
         }
 
-        // Coping Strategies (RAG-based)
-        if (intentName === "Coping Strategies" || callbackData === "Coping Strategies") {
-            const strategy = getRAGResponse(userMessage);
+        // Cheer Up (✔ Restored "Cheer Up" Intent)
+        if (intentName === "Cheer Up" || callbackData === "Cheer Up") {
+            const joke = await getJoke();
 
             return res.json({
                 fulfillmentMessages: [
-                    { text: { text: [strategy] } },
+                    { text: { text: [joke] } },
                     {
                         platform: "TELEGRAM",
                         payload: {
                             telegram: {
-                                text: strategy,
+                                text: joke,
                                 reply_markup: {
                                     inline_keyboard: [
-                                        [{ text: "🌱 Another Tip", callback_data: "Coping Strategies" }],
+                                        [{ text: "😊 Another Joke", callback_data: "Cheer Up" }],
                                         [{ text: "🏠 Main Menu", callback_data: "Welcome Intent" }]
                                     ]
                                 },
                             },
                         },
                     }
+                ],
+            });
+        }
+
+        // Coping Strategies (RAG-based)
+        if (intentName === "Coping Strategies" || callbackData === "Coping Strategies") {
+            const strategy = getRAGResponse(userMessage);
+
+            return res.json({
+                fulfillmentMessages: [
+                    { text: { text: [strategy] } }
                 ],
             });
         }
