@@ -9,36 +9,30 @@ app.use(bodyParser.json());
 require("dotenv").config(); // Load environment variables
 
 const HUGGING_FACE_API_KEY = process.env.HUGGING_FACE_API_KEY;
-
-
-//const HUGGING_FACE_API_KEY = "your_hugging_face_api_key"; // Replace with your Hugging Face API Key
-
-// Load knowledge base for RAG (Example: JSON file)
 const knowledgeBase = JSON.parse(fs.readFileSync("mental_health_tips.json", "utf8"));
 
-// Store user mood streaks (Temporary storage)
-let userMoodStreaks = {};
+let userMoodStreaks = {}; // Temporary storage
 
-// Function to call Hugging Face API for LLM-based responses
-const huggingFaceAPIKey = process.env.HUGGINGFACE_API_KEY; // Load API key from .env
-
+// Function to call Hugging Face API with timeout
 async function getLLMResponse(userInput) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 4000); // 4s timeout
+
     try {
         const response = await axios.post(
             "https://api-inference.huggingface.co/models/facebook/blenderbot-400M-distill",
             { inputs: userInput },
             {
-                headers: {
-                    Authorization: `Bearer ${huggingFaceAPIKey}`,
-                    "Content-Type": "application/json"
-                }
+                headers: { Authorization: `Bearer ${HUGGING_FACE_API_KEY}`, "Content-Type": "application/json" },
+                signal: controller.signal, // Attach signal for timeout
             }
         );
 
+        clearTimeout(timeout);
         return response.data.generated_text || "You're not alone. I'm here for you. 💙";
     } catch (error) {
-        console.error("Hugging Face API Error:", error);
-        return "I hear you. Take a deep breath. 💙";
+        console.error("Hugging Face API Timeout/Error:", error);
+        return "I hear you. Take a deep breath. 💙"; // Fallback response
     }
 }
 
@@ -48,10 +42,19 @@ function getRAGResponse(userQuery) {
     return entry ? entry.response : "I couldn't find specific advice, but I'm always here to support you! 💙";
 }
 
-// Function to detect sentiment
-function detectSentiment(text) {
-    const negativeWords = ["sad", "depressed", "anxious", "stressed", "hopeless", "lonely"];
-    return negativeWords.some((word) => text.toLowerCase().includes(word)) ? "negative" : "positive";
+// Function to fetch a joke with timeout
+async function getJoke() {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 4000); // 4s timeout
+
+    try {
+        const jokeResponse = await axios.get("https://official-joke-api.appspot.com/random_joke", { signal: controller.signal });
+        clearTimeout(timeout);
+        return `${jokeResponse.data.setup}\n${jokeResponse.data.punchline}`;
+    } catch (error) {
+        console.error("Error fetching joke:", error);
+        return "Laughter is the best medicine! 😊";
+    }
 }
 
 app.post("/webhook", async (req, res) => {
@@ -68,7 +71,7 @@ app.post("/webhook", async (req, res) => {
 
         // Welcome Intent (Main Menu)
         if (intentName === "Welcome Intent") {
-            userMoodStreaks[userId] = 0; // Reset streaks when a user starts a chat
+            userMoodStreaks[userId] = 0; // Reset streak
             return res.json({
                 fulfillmentMessages: [
                     { text: { text: ["Hello there! 👋 I'm your Mental Health Support Bot. 💙"] } },
@@ -95,7 +98,7 @@ app.post("/webhook", async (req, res) => {
         // Get Motivation (LLM-based)
         if (intentName === "Get Motivation" || callbackData === "Get Motivation") {
             const llmResponse = await getLLMResponse("I need motivation");
-            userMoodStreaks[userId] = (userMoodStreaks[userId] || 0) + 1; // Increase mood streak
+            userMoodStreaks[userId] = (userMoodStreaks[userId] || 0) + 1;
 
             return res.json({
                 fulfillmentMessages: [
@@ -120,33 +123,27 @@ app.post("/webhook", async (req, res) => {
 
         // Cheer Up (Jokes)
         if (intentName === "Cheer Up" || callbackData === "Cheer Up") {
-            try {
-                const jokeResponse = await axios.get("https://official-joke-api.appspot.com/random_joke");
-                const joke = `${jokeResponse.data.setup}\n${jokeResponse.data.punchline}`;
+            const joke = await getJoke();
 
-                return res.json({
-                    fulfillmentMessages: [
-                        { text: { text: [joke] } },
-                        {
-                            platform: "TELEGRAM",
-                            payload: {
-                                telegram: {
-                                    text: joke,
-                                    reply_markup: {
-                                        inline_keyboard: [
-                                            [{ text: "🤣 Another One!", callback_data: "Cheer Up" }],
-                                            [{ text: "🏠 Main Menu", callback_data: "Welcome Intent" }]
-                                        ]
-                                    },
+            return res.json({
+                fulfillmentMessages: [
+                    { text: { text: [joke] } },
+                    {
+                        platform: "TELEGRAM",
+                        payload: {
+                            telegram: {
+                                text: joke,
+                                reply_markup: {
+                                    inline_keyboard: [
+                                        [{ text: "🤣 Another One!", callback_data: "Cheer Up" }],
+                                        [{ text: "🏠 Main Menu", callback_data: "Welcome Intent" }]
+                                    ]
                                 },
                             },
-                        }
-                    ],
-                });
-            } catch (error) {
-                console.error("Error fetching joke:", error);
-                return res.json({ fulfillmentMessages: [{ text: { text: ["Laughter is the best medicine! 😊"] } }] });
-            }
+                        },
+                    }
+                ],
+            });
         }
 
         // Coping Strategies (RAG-based)
@@ -155,12 +152,12 @@ app.post("/webhook", async (req, res) => {
 
             return res.json({
                 fulfillmentMessages: [
-                    { text: { text: [strategy] } },
+                    { text: { text: [strategy || "Sorry, I couldn't find a coping strategy."] } },
                     {
                         platform: "TELEGRAM",
                         payload: {
                             telegram: {
-                                text: strategy,
+                                text: strategy || "Sorry, I couldn't find a coping strategy.",
                                 reply_markup: {
                                     inline_keyboard: [
                                         [{ text: "🌱 Another Tip", callback_data: "Coping Strategies" }],
