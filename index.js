@@ -64,7 +64,7 @@ function detectSentiment(userInput) {
 
 // RAG-based response
 function getRAGResponse(userQuery) {
-    const mood = detectSentiment(userQuery);
+    const mood = detectSentiment(userQuery); // Use sentiment detection here
     const entry = knowledgeBase.find(item => item.keywords.some(keyword => userQuery.toLowerCase().includes(keyword)));
     if (!entry) return "I couldn't find specific advice, but I'm always here to support you! 💙";
     return mood === "negative" ? entry.negative_response || entry.response
