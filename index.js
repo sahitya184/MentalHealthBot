@@ -34,31 +34,12 @@ function saveMoodStreaks() {
 }
 
 // Hugging Face API Call with timeout
-/*async function getLLMResponse(userInput) {
-    try {
-        const response = await axios.post(
-            "https://api-inference.huggingface.co/models/facebook/blenderbot-400M-distill",
-            { inputs: userInput },
-            {
-                headers: { Authorization: `Bearer ${HUGGING_FACE_API_KEY}`, "Content-Type": "application/json" },
-                timeout: 10000, // Set a timeout of 10 seconds
-            }
-        );
-
-        // Return empathetic response
-        return response.data?.generated_text || "I'm here for you. Let's talk it out. 💙";
-    } catch (error) {
-        console.error("Hugging Face API Error:", error.message);
-        return "I'm here for you. Take a deep breath. 💙";
-    }
-}*/
-
 async function getLLMResponse(userMessage) {
     try {
         const response = await fetch('https://api-inference.huggingface.co/models/facebook/blenderbot-400M-distill', {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer YOUR_HUGGINGFACE_API_KEY`,  // Use your Hugging Face API key
+                'Authorization': `Bearer ${HUGGING_FACE_API_KEY}`,  // Use your Hugging Face API key
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({ inputs: userMessage }),
@@ -71,7 +52,6 @@ async function getLLMResponse(userMessage) {
         return "I believe in you! Let me share some words of motivation. 💪";  // Fallback message
     }
 }
-
 
 // Sentiment Detection
 function detectSentiment(userInput) {
@@ -230,12 +210,44 @@ app.post("/webhook", async (req, res) => {
 
         // Coping Strategies (RAG-based)
         if (intentName === "Coping Strategies" || callbackData === "Coping Strategies") {
-            const strategy = getRAGResponse(userMessage);
-
+            const llmResponse = await getLLMResponse(userMessage);  // Assuming this generates a response
+            
+            // Generate dynamic response
+            let copingMessage = llmResponse || "Here's something to help you cope: 💙";
+        
+            // Construct response
+            const fullMessage = `
+                ${copingMessage}
+        
+                💡 Take a deep breath, relax, and focus on the positive. You’ve got this!
+            `;
+        
+            // Ensure the response has valid text
+            if (!fullMessage || fullMessage.trim().length === 0) {
+                return res.json({
+                    fulfillmentMessages: [{ text: { text: ["Sorry, I couldn't find a coping strategy for you. Please try again later."] } }]
+                });
+            }
+        
+            // Returning the response with proper format
             return res.json({
                 fulfillmentMessages: [
-                    { text: { text: [strategy] } }
-                ],
+                    { text: { text: [fullMessage] } },  // Standard text message
+                    {
+                        platform: "TELEGRAM",  // Telegram-specific message
+                        payload: {
+                            telegram: {
+                                text: fullMessage,
+                                reply_markup: {
+                                    inline_keyboard: [
+                                        [{ text: "🌱 Try Another", callback_data: "Coping Strategies" }],
+                                        [{ text: "🏠 Main Menu", callback_data: "Welcome Intent" }]
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                ]
             });
         }
 
