@@ -142,31 +142,29 @@ app.post("/webhook", async (req, res) => {
 
         if (isTelegram) {
             chatId = req.body.message.chat.id;
-            const messageText = req.body.message.text.toLowerCase(); // Convert to lowercase for consistency
+            const messageText = req.body.message.text.toLowerCase();
 
-            // Handle Telegram Commands
             if (messageText === "/start") {
                 responseText = await handleWelcomeIntent();
             } else if (messageText === "yes") {
-                responseText = await handleYesResponse(chatId);  // Handle "Yes" response
+                responseText = await handleYesResponse(chatId);
             } else {
-                responseText = await handleAskAnythingIntent(messageText, chatId);  // Pass chatId as sessionId
+                responseText = await handleAskAnythingIntent(messageText, chatId);
             }
 
             await sendTelegramMessage(chatId, responseText);
             return res.sendStatus(200);
         }
 
-        // 🔹 Check if queryResult exists
         if (!req.body.queryResult) {
             console.error("Error: queryResult is undefined. Received payload:", req.body);
             return res.json({ fulfillmentText: "Sorry, something went wrong. Please try again!" });
         }
 
-        // Extract sessionId from request
         const sessionId = req.body.session ? req.body.session.split("/").pop() : "unknown_session";
+        const projectId = req.body.session ? req.body.session.split("/")[1] : "unknown_project";
         const intentName = req.body.queryResult.intent.displayName;
-        const userQuery = req.body.queryResult.queryText.toLowerCase() || "No query detected";  // Convert to lowercase
+        const userQuery = req.body.queryResult.queryText?.toLowerCase() || "No query detected";
 
         console.log(`Received Intent: ${intentName}, User Query: ${userQuery}, Session ID: ${sessionId}`);
 
@@ -184,28 +182,31 @@ app.post("/webhook", async (req, res) => {
                 responseText = await handleCopingStrategiesIntent();
                 break;
             case "Ask Anything":
-                responseText = await handleAskAnythingIntent(userQuery, sessionId);  // Pass sessionId
+                responseText = await handleAskAnythingIntent(userQuery, sessionId);
                 break;
-            case "Yes Intent":  // If "Yes" is detected as an intent
+            case "Yes Intent":
                 responseText = await handleYesResponse(sessionId);
                 break;
             default:
                 responseText = "I'm here to listen. Can you tell me more?";
         }
 
-        // ✅ Properly formatted response for Dialogflow (including outputContexts)
+        // ✅ Ensure responseText is always a string
+        responseText = String(responseText);
+
         const responsePayload = {
-            fulfillmentText: responseText,  // Ensure this is a string
-            fulfillmentMessages: [{ text: { text: [responseText] } }], // Ensure proper format
+            fulfillmentText: responseText,  
+            fulfillmentMessages: [{ text: { text: [responseText] } }], 
             outputContexts: [
                 {
-                    name: `projects/${req.body.session.split("/")[1]}/agent/sessions/${sessionId}/contexts/ask_anything_followup`,
+                    name: `projects/${projectId}/agent/sessions/${sessionId}/contexts/ask_anything_followup`,
                     lifespanCount: 2,
-                    parameters: { query: String(userQuery) } // Ensure query is a string
+                    parameters: { query: String(userQuery) }
                 }
             ]
         };
-        
+
+        console.log("Webhook Response:", JSON.stringify(responsePayload, null, 2));
         res.json(responsePayload);
 
     } catch (error) {
