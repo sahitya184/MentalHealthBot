@@ -1,273 +1,132 @@
+require("dotenv").config(); // Load environment variables
 const express = require("express");
-const bodyParser = require("body-parser");
 const axios = require("axios");
-const fs = require("fs");
-require("dotenv").config();
-
+const bodyParser = require("body-parser");
 const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Hugging Face API for LLM responses (Free model)
+const HF_API_URL = "https://api-inference.huggingface.co/models/facebook/blenderbot-400M-distill";
+const HF_API_TOKEN = process.env.HF_API_TOKEN; // Loaded from .env file
+
+// Wikipedia API for Retrieval-Augmented Generation (RAG)
+const WIKI_API_URL = "https://en.wikipedia.org/api/rest_v1/page/summary/";
+
+// Telegram Bot Token
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+const TELEGRAM_API_URL = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+
+// Middleware
 app.use(bodyParser.json());
 
-// Load environment variables
-const HUGGING_FACE_API_KEY = process.env.HUGGING_FACE_API_KEY;
-const knowledgeBaseFile = "mental_health_tips.json";
-const streakFile = "mood_streaks.json";
-
-if (!HUGGING_FACE_API_KEY) {
-    console.error("Missing Hugging Face API Key! Please check your environment variables.");
-    process.exit(1); // Exit the program if no API key
-}
-
-// Load the knowledge base (Mental Health Tips)
-let knowledgeBase = [];
-try {
-    knowledgeBase = JSON.parse(fs.readFileSync(knowledgeBaseFile, "utf8"));
-} catch (error) {
-    console.error("Error reading or parsing the knowledge base file:", error.message);
-}
-
-// Load mood streaks from a file (Persistent Storage)
-let userMoodStreaks = fs.existsSync(streakFile) ? JSON.parse(fs.readFileSync(streakFile, "utf8")) : {};
-
-// Function to save streaks persistently
-function saveMoodStreaks() {
-    fs.writeFileSync(streakFile, JSON.stringify(userMoodStreaks, null, 2));
-}
-
-// Hugging Face API Call with timeout
-async function getLLMResponse(userMessage) {
+// Function to query Hugging Face model with error handling
+async function queryLLM(message) {
     try {
-        const response = await fetch('https://api-inference.huggingface.co/models/facebook/blenderbot-400M-distill', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${HUGGING_FACE_API_KEY}`,  // Use your Hugging Face API key
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ inputs: userMessage }),
+        const response = await axios.post(HF_API_URL, { inputs: message }, {
+            headers: { Authorization: `Bearer ${HF_API_TOKEN}` },
+            timeout: 5000, // Prevents hanging requests
         });
-
-        const data = await response.json();
-        return data?.generated_text || "I believe in you! Let me share some words of motivation. 💪";  // Fallback in case of an error or no result
+        return response.data.generated_text || "I'm here to help, tell me more!";
     } catch (error) {
-        console.error('Error calling Hugging Face API:', error);
-        return "I believe in you! Let me share some words of motivation. 💪";  // Fallback message
+        console.error("LLM Error:", error.message);
+        return "I'm having trouble processing your request. Can you try again?";
     }
 }
 
-// Sentiment Detection
-function detectSentiment(userInput) {
-    const positiveWords = ["happy", "great", "excited", "hopeful"];
-    const negativeWords = ["sad", "depressed", "stressed", "anxious"];
-    const isPositive = positiveWords.some(word => userInput.toLowerCase().includes(word));
-    const isNegative = negativeWords.some(word => userInput.toLowerCase().includes(word));
-    return isPositive ? "positive" : isNegative ? "negative" : "neutral";
-}
-
-// RAG-based response
-function getRAGResponse(userQuery) {
-    const mood = detectSentiment(userQuery); // Use sentiment detection here
-    const entry = knowledgeBase.find(item => item.keywords.some(keyword => userQuery.toLowerCase().includes(keyword)));
-    if (!entry) return "I couldn't find specific advice, but I'm always here to support you! 💙";
-    return mood === "negative" ? entry.negative_response || entry.response
-        : mood === "positive" ? entry.positive_response || entry.response
-        : entry.response;
-}
-
-// Joke for Cheer Up
-async function getJoke() {
+// Function to retrieve relevant context from Wikipedia (RAG)
+async function getWikiSummary(query) {
     try {
-        const jokeResponse = await axios.get("https://official-joke-api.appspot.com/random_joke");
-        return `${jokeResponse.data.setup}\n${jokeResponse.data.punchline}`;
+        const response = await axios.get(WIKI_API_URL + encodeURIComponent(query), { timeout: 5000 });
+        return response.data.extract || "I couldn't find any relevant information, but let's discuss!";
     } catch (error) {
-        console.error("Error fetching joke:", error);
-        return "Laughter is the best medicine! 😊";
+        console.error("Wikipedia API Error:", error.message);
+        return "I couldn't retrieve external information, but I can still chat with you!";
     }
 }
 
-// Handle Webhook requests
+// Function to send message to Telegram
+async function sendTelegramMessage(chatId, text) {
+    try {
+        await axios.post(TELEGRAM_API_URL, { chat_id: chatId, text });
+    } catch (error) {
+        console.error("Telegram Message Error:", error.message);
+    }
+}
+
+// Intent Handlers
+async function handleWelcomeIntent() {
+    return "Hey there! I'm your mental health companion. How are you feeling today? 😊";
+}
+
+async function handleCheerUpIntent() {
+    return "I’ve got a joke for you! Why don’t skeletons fight each other? Because they don’t have the guts! 😆";
+}
+
+async function handleGetMotivationIntent() {
+    return "You are stronger than you think! Every challenge is an opportunity to grow. 🌟";
+}
+
+async function handleCopingStrategiesIntent() {
+    return "Take a deep breath. Try the 4-7-8 technique: Inhale for 4 seconds, hold for 7, and exhale for 8. Works wonders! 🌬️";
+}
+
+async function handleAskAnythingIntent(query) {
+    const wikiData = await getWikiSummary(query);
+    const llmResponse = await queryLLM(query);
+    return `${wikiData}\n\n${llmResponse}`;
+}
+
+// Webhook Endpoint
 app.post("/webhook", async (req, res) => {
-    const intentName = req.body.queryResult?.intent?.displayName || "";
-    const userMessage = req.body.queryResult?.queryText || "";
-    const callbackData = req.body.originalDetectIntentRequest?.payload?.data?.callback_query?.data || "";
-    const userId = req.body.session;
-
-    if (!intentName || !userMessage) {
-        return res.status(400).json({
-            fulfillmentMessages: [{ text: { text: ["Sorry, I didn't understand your request."] } }]
-        });
-    }
-
     try {
-        res.setHeader("Content-Type", "application/json");
+        let responseText = "";
+        const isTelegram = req.body.message && req.body.message.chat;
+        let chatId = null;
 
-        // Welcome Intent (Proactive Message)
-        if (intentName === "Welcome Intent") {
-            userMoodStreaks[userId] = 0;
-            saveMoodStreaks();
+        if (isTelegram) {
+            chatId = req.body.message.chat.id;
+            const messageText = req.body.message.text;
 
-            return res.json({
-                fulfillmentMessages: [
-                    { text: { text: ["Hello! 👋 I'm here to support your mental health. 💙"] } },
-                    { text: { text: ["I can help you with:\n✅ Motivation\n😊 Cheer Up with Jokes\n🌱 Coping Strategies\n💭 Share Your Feelings"] } },
-                    {
-                        platform: "TELEGRAM",
-                        payload: {
-                            telegram: {
-                                text: "How can I support you today? 😊",
-                                reply_markup: {
-                                    inline_keyboard: [
-                                        [{ text: "💪 Get Motivation", callback_data: "Get Motivation" }],
-                                        [{ text: "😊 Cheer Up", callback_data: "Cheer Up" }],
-                                        [{ text: "🌱 Coping Strategies", callback_data: "Coping Strategies" }],
-                                        [{ text: "💬 Share My Feelings", callback_data: "Share My Feelings" }],
-                                        [{ text: "📅 Daily Mood Check-in", callback_data: "Daily Mood Check-in" }],
-                                        [{ text: "❌ End Chat", callback_data: "End Chat" }]
-                                    ]
-                                },
-                            },
-                        },
-                    }
-                ],
-            });
-        }
-
-        // Get Motivation
-        if (intentName === "Get Motivation" || callbackData === "Get Motivation") {
-            const llmResponse = await getLLMResponse(userMessage);  // Get a personalized motivational message from Hugging Face
-            
-            // Increment Mood Streak for each motivation request
-            userMoodStreaks[userId] = (userMoodStreaks[userId] || 0) + 1;
-            saveMoodStreaks();
-
-            // Generate dynamic response
-            let motivationalMessage = llmResponse;
-            if (!motivationalMessage) {
-                motivationalMessage = "I'm here to support you! 💙 You're doing great! Keep it up! 🌟";  // Fallback message
+            // Handle Telegram Commands
+            if (messageText === "/start") {
+                responseText = await handleWelcomeIntent();
+            } else {
+                responseText = await handleAskAnythingIntent(messageText);
             }
 
-            const fullMessage = `
-                Here's a motivational message just for you: 
-                ${motivationalMessage}
-
-                🔥 Keep going strong! You're on a roll! 
-                Mood Streak: ${userMoodStreaks[userId]} days!
-
-                💪 You’ve got this!
-            `;
-
-            // Ensure the response has valid text
-            if (!fullMessage || fullMessage.trim().length === 0) {
-                return res.json({
-                    fulfillmentMessages: [{ text: { text: ["Sorry, I couldn't get a motivational message for you. Please try again later."] } }]
-                });
-            }
-
-            // Returning the response
-            return res.json({
-                fulfillmentMessages: [
-                    { text: { text: [fullMessage] } },
-                    {
-                        platform: "TELEGRAM",
-                        payload: {
-                            telegram: {
-                                text: fullMessage,
-                                reply_markup: {
-                                    inline_keyboard: [
-                                        [{ text: "🔄 Get Another", callback_data: "Get Motivation" }],
-                                        [{ text: "🏠 Main Menu", callback_data: "Welcome Intent" }]
-                                    ]
-                                },
-                            },
-                        },
-                    }
-                ],
-            });
+            await sendTelegramMessage(chatId, responseText);
+            return res.sendStatus(200);
         }
 
-        // Cheer Up
-        if (intentName === "Cheer Up" || callbackData === "Cheer Up") {
-            const joke = await getJoke();
-
-            return res.json({
-                fulfillmentMessages: [
-                    { text: { text: [joke] } },
-                    {
-                        platform: "TELEGRAM",
-                        payload: {
-                            telegram: {
-                                text: joke,
-                                reply_markup: {
-                                    inline_keyboard: [
-                                        [{ text: "😊 Another Joke", callback_data: "Cheer Up" }],
-                                        [{ text: "🏠 Main Menu", callback_data: "Welcome Intent" }]
-                                    ]
-                                },
-                            },
-                        },
-                    }
-                ],
-            });
+        const intentName = req.body.queryResult.intent.displayName;
+        switch (intentName) {
+            case "Welcome Intent":
+                responseText = await handleWelcomeIntent();
+                break;
+            case "Cheer Up":
+                responseText = await handleCheerUpIntent();
+                break;
+            case "Get Motivation":
+                responseText = await handleGetMotivationIntent();
+                break;
+            case "Coping Strategies":
+                responseText = await handleCopingStrategiesIntent();
+                break;
+            case "Ask Anything":
+                responseText = await handleAskAnythingIntent(req.body.queryResult.queryText);
+                break;
+            default:
+                responseText = "I'm here to listen. Can you tell me more?";
         }
 
-        // Coping Strategies (RAG-based)
-        if (intentName === "Coping Strategies" || callbackData === "Coping Strategies") {
-            const llmResponse = await getLLMResponse(userMessage);  // Assuming this generates a response
-            
-            // Generate dynamic response
-            let copingMessage = llmResponse || "Here's something to help you cope: 💙";
-        
-            // Construct response
-            const fullMessage = `
-                ${copingMessage}
-        
-                💡 Take a deep breath, relax, and focus on the positive. You’ve got this!
-            `;
-        
-            // Ensure the response has valid text
-            if (!fullMessage || fullMessage.trim().length === 0) {
-                return res.json({
-                    fulfillmentMessages: [{ text: { text: ["Sorry, I couldn't find a coping strategy for you. Please try again later."] } }]
-                });
-            }
-        
-            // Returning the response with proper format
-            return res.json({
-                fulfillmentMessages: [
-                    { text: { text: [fullMessage] } },  // Standard text message
-                    {
-                        platform: "TELEGRAM",  // Telegram-specific message
-                        payload: {
-                            telegram: {
-                                text: fullMessage,
-                                reply_markup: {
-                                    inline_keyboard: [
-                                        [{ text: "🌱 Try Another", callback_data: "Coping Strategies" }],
-                                        [{ text: "🏠 Main Menu", callback_data: "Welcome Intent" }]
-                                    ]
-                                }
-                            }
-                        }
-                    }
-                ]
-            });
-        }
-
-        // Share My Feelings
-        if (intentName === "Share My Feelings" || callbackData === "Share My Feelings") {
-            return res.json({
-                fulfillmentMessages: [
-                    { text: { text: ["I'm here to listen. How are you feeling today? 💙"] } }
-                ],
-            });
-        }
-
-        return res.json({ fulfillmentMessages: [{ text: { text: ["I'm here for you. Let me know how I can help! 💙"] } }] });
-
+        res.json({ fulfillmentText: responseText });
     } catch (error) {
-        console.error("Error:", error);
-        return res.json({ fulfillmentMessages: [{ text: { text: ["Oops! Something went wrong. Please try again."] } }] });
+        console.error("Webhook Processing Error:", error.message);
+        res.json({ fulfillmentText: "Oops! Something went wrong. Please try again later." });
     }
 });
 
-// Start the server
-const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+// Start Server
+app.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+});
