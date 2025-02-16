@@ -55,12 +55,19 @@ async function getLLMResponse(prompt) {
                 }
             }
         );
-        return response.data.choices[0].text.trim();
+
+        // Ensure choices array is not empty before accessing
+        if (response.data.choices && response.data.choices.length > 0) {
+            return response.data.choices[0].text.trim();
+        } else {
+            return "Sorry, I couldn't generate a response at the moment.";
+        }
     } catch (error) {
         console.error("LLM API error:", error.message);
         return "I'm unable to provide a response at the moment. Please try again later.";
     }
 }
+
 
 // Main webhook endpoint
 app.post("/webhook", async (req, res) => {
@@ -68,7 +75,7 @@ app.post("/webhook", async (req, res) => {
     let fulfillmentText = "";
 
     switch (intent) {
-        case "Default Welcome Intent":
+        case  "Welcome Intent":
             fulfillmentText = "Hello! I'm your friendly Mental Health Bot. How can I assist you today?";
             break;
         case "cheer up":
