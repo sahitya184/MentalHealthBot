@@ -42,19 +42,25 @@ async function getCopingStrategy() {
 async function getLLMResponse(prompt) {
     try {
         const response = await axios.post(
-            "https://api-inference.huggingface.co/models/gpt2",  // Use the Hugging Face API model (e.g., GPT-2)
-            { inputs: prompt },  // Passing the prompt to the model
+            "https://api-inference.huggingface.co/models/google/flan-t5-small",
+            { inputs: prompt },
             {
                 headers: {
-                    "Authorization": `Bearer ${HUGGINGFACE_API_KEY}`, // Use Hugging Face API key
-                    "Content-Type": "application/json"
-                }
+                    "Authorization": `Bearer ${HUGGINGFACE_API_KEY}`,  // Ensure correct Bearer format
+                    "Content-Type": "application/json",
+                },
+                timeout: 8000,
             }
         );
-        return response.data[0].generated_text.trim(); // Extract generated text from response
+
+        if (response.data && response.data[0] && response.data[0].generated_text) {
+            return response.data[0].generated_text.trim();
+        } else {
+            throw new Error("Invalid Hugging Face response structure.");
+        }
     } catch (error) {
-        console.error("Hugging Face API error:", error.message);
-        return "I'm unable to provide a response at the moment. Please try again later.";
+        console.error("Hugging Face API error:", error.response ? error.response.data : error.message);
+        return "I'm unable to process your request right now.";
     }
 }
 
