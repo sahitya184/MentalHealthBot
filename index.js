@@ -196,13 +196,7 @@ app.post("/webhook", async (req, res) => {
         // ✅ Properly formatted response for Dialogflow (including outputContexts)
         const responsePayload = {
             fulfillmentText: responseText,  // Main response message
-            outputContexts: [
-                {
-                    name: `projects/${req.body.session.split("/")[1]}/agent/sessions/${sessionId}/contexts/ask_anything_followup`,
-                    lifespanCount: 2,
-                    parameters: { query: userQuery }
-                }
-            ]
+            outputContexts: req.body.queryResult.outputContexts || []  // Preserve existing contexts
         };
 
         res.json(responsePayload);
