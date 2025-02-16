@@ -34,13 +34,17 @@ async function queryLLM(message) {
 }
 
 // Function to retrieve relevant context from Wikipedia (RAG)
-async function getWikiSummary(query) {
+async function fetchWikipediaSummary(query) {
     try {
-        const response = await axios.get(WIKI_API_URL + encodeURIComponent(query), { timeout: 5000 });
-        return response.data.extract || "I couldn't find any relevant information, but let's discuss!";
+        const response = await axios.get(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`);
+        if (response.data.extract) {
+            return response.data.extract; // Return the summary
+        } else {
+            return "Sorry, I couldn't find that information. Can you ask something else?";
+        }
     } catch (error) {
         console.error("Wikipedia API Error:", error.message);
-        return "I couldn't retrieve external information, but I can still chat with you!";
+        return "I'm having trouble retrieving this information right now. Please try again later.";
     }
 }
 
