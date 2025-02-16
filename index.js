@@ -91,8 +91,14 @@ async function handleAskAnythingIntent(userQuery) {
 
         console.log(`Fetching answer for: ${userQuery}`);
 
-        // Example: Query Wikipedia API (or any other source you're using)
+        // Wikipedia API request
         const response = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(userQuery)}`);
+        
+        if (response.status === 404) {
+            console.warn(`Wikipedia API: No article found for "${userQuery}"`);
+            return "I couldn't find an answer for that. Would you like me to explain it in simpler terms?";
+        }
+
         if (!response.ok) {
             console.error(`Wikipedia API Error: ${response.statusText}`);
             return "I couldn't find an answer right now. Please try again later.";
@@ -100,12 +106,14 @@ async function handleAskAnythingIntent(userQuery) {
 
         const data = await response.json();
         return data.extract || "I couldn't find an answer for that.";
-        
+
     } catch (error) {
         console.error("Error in handleAskAnythingIntent:", error.message);
         return "Oops! Something went wrong. Please try again.";
     }
 }
+
+
 // Webhook Endpoint
 
 app.post("/webhook", async (req, res) => {
