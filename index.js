@@ -20,16 +20,24 @@ const TELEGRAM_API_URL = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/send
 app.use(bodyParser.json());
 
 // Function to query Hugging Face model with error handling
-async function queryLLM(message) {
+async function queryLLM(question) {
     try {
-        const response = await axios.post(HF_API_URL, { inputs: message }, {
-            headers: { Authorization: `Bearer ${HF_API_TOKEN}` },
-            timeout: 5000, // Prevents hanging requests
-        });
-        return response.data.generated_text || "I'm here to help, tell me more!";
+        const apiUrl = "https://api-inference.huggingface.co/models/google/flan-t5-large";
+        const headers = { "Authorization": `Bearer ${process.env.HF_API_TOKEN}` };
+        const payload = { "inputs": question };
+
+        const response = await axios.post(apiUrl, payload, { headers, timeout: 10000 }); // Increased timeout
+
+        console.log("LLM Raw Response:", response.data); // Debugging log
+
+        if (response.data && response.data.length > 0) {
+            return response.data[0].generated_text || "I'm having trouble finding an answer right now.";
+        } else {
+            return "Hmm, I couldn't generate a response for that. Try asking something else.";
+        }
     } catch (error) {
-        console.error("LLM Error:", error.message);
-        return "I'm having trouble processing your request. Can you try again?";
+        console.error("LLM API Error:", error.response ? error.response.data : error.message);
+        return "Sorry, I'm having trouble retrieving information at the moment.";
     }
 }
 
@@ -74,12 +82,20 @@ async function handleCopingStrategiesIntent() {
     return "Take a deep breath. Try the 4-7-8 technique: Inhale for 4 seconds, hold for 7, and exhale for 8. Works wonders! 🌬️";
 }
 
-async function handleAskAnythingIntent(query) {
-    const wikiData = await getWikiSummary(query);
-    const llmResponse = await queryLLM(query);
-    return `${wikiData}\n\n${llmResponse}`;
+async function handleAskAnythingIntent(req, res) {
+    const userQuestion = req.body.queryResult.queryText;
+    console.log("User Question:", userQuestion); // Debugging log
+
+    const botResponse = await queryLLM(userQuestion);
+
+    console.log("Bot Response:", botResponse); // Debugging log
+
+    res.json({
+        fulfillmentText: botResponse
+    });
 }
 
+module.exports = { handleAskAnythingIntent };
 // Webhook Endpoint
 app.post("/webhook", async (req, res) => {
     try {
