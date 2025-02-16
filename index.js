@@ -96,6 +96,7 @@ async function handleAskAnythingIntent(req, res) {
 }
 
 module.exports = { handleAskAnythingIntent };
+
 // Webhook Endpoint
 app.post("/webhook", async (req, res) => {
     try {
@@ -105,7 +106,7 @@ app.post("/webhook", async (req, res) => {
 
         if (isTelegram) {
             chatId = req.body.message.chat.id;
-            const messageText = req.body.message.text;
+            const messageText = req.body.message.text || "";
 
             // Handle Telegram Commands
             if (messageText === "/start") {
@@ -118,7 +119,17 @@ app.post("/webhook", async (req, res) => {
             return res.sendStatus(200);
         }
 
-        const intentName = req.body.queryResult.intent.displayName;
+        // Validate Dialogflow Request
+        if (!req.body || !req.body.queryResult) {
+            console.error("Invalid request received:", req.body);
+            return res.status(400).json({ fulfillmentText: "Sorry, I couldn't process that request." });
+        }
+
+        const intentName = req.body.queryResult.intent?.displayName || "Unknown";
+        const userQuery = req.body.queryResult.queryText || "";
+
+        console.log(`Received Intent: ${intentName}, User Query: ${userQuery}`);
+
         switch (intentName) {
             case "Welcome Intent":
                 responseText = await handleWelcomeIntent();
@@ -133,7 +144,7 @@ app.post("/webhook", async (req, res) => {
                 responseText = await handleCopingStrategiesIntent();
                 break;
             case "Ask Anything":
-                responseText = await handleAskAnythingIntent(req.body.queryResult.queryText);
+                responseText = await handleAskAnythingIntent(userQuery);
                 break;
             default:
                 responseText = "I'm here to listen. Can you tell me more?";
@@ -142,7 +153,7 @@ app.post("/webhook", async (req, res) => {
         res.json({ fulfillmentText: responseText });
     } catch (error) {
         console.error("Webhook Processing Error:", error.message);
-        res.json({ fulfillmentText: "Oops! Something went wrong. Please try again later." });
+        res.status(500).json({ fulfillmentText: "Oops! Something went wrong. Please try again later." });
     }
 });
 
