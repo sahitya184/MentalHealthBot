@@ -3,8 +3,6 @@ const bodyParser = require("body-parser");
 const axios = require("axios");
 const { OpenAI } = require("openai");
 
-
-
 const app = express();
 app.use(bodyParser.json());
 
@@ -62,6 +60,9 @@ app.post("/webhook", async (req, res) => {
     let fulfillmentText = "";
 
     switch (intent) {
+        case "Default Welcome Intent":
+            fulfillmentText = "Hello! I'm your friendly Mental Health Bot. How can I assist you today?";
+            break;
         case "cheer up":
             fulfillmentText = await getJoke();
             break;
@@ -77,6 +78,14 @@ app.post("/webhook", async (req, res) => {
     }
 
     res.json({ fulfillmentText });
+});
+
+// Telegram webhook endpoint for /start command
+app.post("/telegram", async (req, res) => {
+    const message = req.body.message;
+    if (message && message.text === "/start") {
+        res.json({ text: "Welcome to the Mental Health Bot! I'm here to help. How are you feeling today?" });
+    }
 });
 
 const PORT = process.env.PORT || 3000;
