@@ -42,7 +42,7 @@ async function queryLLM(question) {
 }
 
 // Function to retrieve relevant context from Wikipedia (RAG)
-async function fetchWikipediaSummary(query) {
+async function getWikiSummary(query) {
     try {
         const response = await axios.get(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`);
         if (response.data.extract) {
