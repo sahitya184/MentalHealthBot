@@ -5,7 +5,7 @@ const axios = require("axios");
 const app = express();
 app.use(bodyParser.json());
 
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+const HUGGINGFACE_API_KEY = process.env.HUGGINGFACE_API_KEY; // Store the Hugging Face API key here
 const JOKE_API_URL = "https://v2.jokeapi.dev/joke/Any?format=json";
 const QUOTE_API_URL = "https://api.quotable.io/random";
 
@@ -38,30 +38,25 @@ async function getCopingStrategy() {
     return await getLLMResponse("Give me a helpful coping strategy for stress.");
 }
 
-// Function to fetch response from OpenRouter LLM (using axios)
+// Function to fetch response from Hugging Face LLM (using axios)
 async function getLLMResponse(prompt) {
     try {
         const response = await axios.post(
-            "https://api.openai.com/v1/chat/completions",  // Chat completion endpoint
-            {
-                model: "gpt-3.5-turbo",  // Choose the model according to your plan
-                messages: [{ role: "user", content: prompt }],
-                max_tokens: 50,
-            },
+            "https://api-inference.huggingface.co/models/gpt2",  // Use the Hugging Face API model (e.g., GPT-2)
+            { inputs: prompt },  // Passing the prompt to the model
             {
                 headers: {
-                    "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
-                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${HUGGINGFACE_API_KEY}`, // Use Hugging Face API key
+                    "Content-Type": "application/json"
                 }
             }
         );
-        return response.data.choices[0].message.content.trim(); // For chat-based models, the response structure is different
+        return response.data[0].generated_text.trim(); // Extract generated text from response
     } catch (error) {
-        console.error("LLM API error:", error.message);
+        console.error("Hugging Face API error:", error.message);
         return "I'm unable to provide a response at the moment. Please try again later.";
     }
 }
-
 
 // Main webhook endpoint
 app.post("/webhook", async (req, res) => {
