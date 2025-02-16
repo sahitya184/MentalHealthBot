@@ -42,20 +42,20 @@ async function getCopingStrategy() {
 async function getLLMResponse(prompt) {
     try {
         const response = await axios.post(
-            "https://api.openai.com/v1/completions", // OpenAI API endpoint
+            "https://api.openai.com/v1/chat/completions",  // Chat completion endpoint
             {
-                model: "text-davinci-003",  // You can use any available model from OpenAI
-                prompt: prompt,
+                model: "gpt-3.5-turbo",  // Choose the model according to your plan
+                messages: [{ role: "user", content: prompt }],
                 max_tokens: 50,
             },
             {
                 headers: {
-                    "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`, // Use your OpenAI API key
+                    "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
                     "Content-Type": "application/json",
-                },
+                }
             }
         );
-        return response.data.choices[0].text.trim();
+        return response.data.choices[0].message.content.trim(); // For chat-based models, the response structure is different
     } catch (error) {
         console.error("LLM API error:", error.message);
         return "I'm unable to provide a response at the moment. Please try again later.";
