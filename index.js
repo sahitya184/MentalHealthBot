@@ -98,6 +98,7 @@ async function handleAskAnythingIntent(req, res) {
 module.exports = { handleAskAnythingIntent };
 
 // Webhook Endpoint
+
 app.post("/webhook", async (req, res) => {
     try {
         let responseText = "";
@@ -106,7 +107,7 @@ app.post("/webhook", async (req, res) => {
 
         if (isTelegram) {
             chatId = req.body.message.chat.id;
-            const messageText = req.body.message.text || "";
+            const messageText = req.body.message.text;
 
             // Handle Telegram Commands
             if (messageText === "/start") {
@@ -119,14 +120,14 @@ app.post("/webhook", async (req, res) => {
             return res.sendStatus(200);
         }
 
-        // Validate Dialogflow Request
-        if (!req.body || !req.body.queryResult) {
-            console.error("Invalid request received:", req.body);
-            return res.status(400).json({ fulfillmentText: "Sorry, I couldn't process that request." });
+        // 🔹 Check if queryResult exists
+        if (!req.body.queryResult) {
+            console.error("Error: queryResult is undefined. Received payload:", req.body);
+            return res.json({ fulfillmentText: "Sorry, something went wrong. Please try again!" });
         }
 
-        const intentName = req.body.queryResult.intent?.displayName || "Unknown";
-        const userQuery = req.body.queryResult.queryText || "";
+        const intentName = req.body.queryResult.intent.displayName;
+        const userQuery = req.body.queryResult.queryText || "No query detected";
 
         console.log(`Received Intent: ${intentName}, User Query: ${userQuery}`);
 
@@ -152,8 +153,8 @@ app.post("/webhook", async (req, res) => {
 
         res.json({ fulfillmentText: responseText });
     } catch (error) {
-        console.error("Webhook Processing Error:", error.message);
-        res.status(500).json({ fulfillmentText: "Oops! Something went wrong. Please try again later." });
+        console.error("Webhook Processing Error:", error.message, error.stack);
+        res.json({ fulfillmentText: "Oops! Something went wrong. Please try again later." });
     }
 });
 
