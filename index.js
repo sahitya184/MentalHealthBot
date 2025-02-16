@@ -82,21 +82,30 @@ async function handleCopingStrategiesIntent() {
     return "Take a deep breath. Try the 4-7-8 technique: Inhale for 4 seconds, hold for 7, and exhale for 8. Works wonders! 🌬️";
 }
 
-async function handleAskAnythingIntent(req, res) {
-    const userQuestion = req.body.queryResult.queryText;
-    console.log("User Question:", userQuestion); // Debugging log
+async function handleAskAnythingIntent(userQuery) {
+    try {
+        if (!userQuery) {
+            console.error("Error: userQuery is undefined or empty");
+            return "Sorry, I couldn't understand that. Can you rephrase?";
+        }
 
-    const botResponse = await queryLLM(userQuestion);
+        console.log(`Fetching answer for: ${userQuery}`);
 
-    console.log("Bot Response:", botResponse); // Debugging log
+        // Example: Query Wikipedia API (or any other source you're using)
+        const response = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(userQuery)}`);
+        if (!response.ok) {
+            console.error(`Wikipedia API Error: ${response.statusText}`);
+            return "I couldn't find an answer right now. Please try again later.";
+        }
 
-    res.json({
-        fulfillmentText: botResponse
-    });
+        const data = await response.json();
+        return data.extract || "I couldn't find an answer for that.";
+        
+    } catch (error) {
+        console.error("Error in handleAskAnythingIntent:", error.message);
+        return "Oops! Something went wrong. Please try again.";
+    }
 }
-
-module.exports = { handleAskAnythingIntent };
-
 // Webhook Endpoint
 
 app.post("/webhook", async (req, res) => {
