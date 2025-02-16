@@ -96,18 +96,7 @@ async function handleAskAnythingIntent(userQuery, sessionId) {
         
         if (response.status === 404) {
             console.warn(`Wikipedia API: No article found for "${userQuery}"`);
-            
-            // Return a response that sets a follow-up context
-            return {
-                fulfillmentText: "I couldn't find an answer for that. Would you like me to explain it in simpler terms?",
-                outputContexts: [
-                    {
-                        name: `projects/mentalhealthbot-uwmv/agent/sessions/${sessionId}/contexts/ask_anything_followup`,
-                        lifespanCount: 2,
-                        parameters: { query: userQuery }
-                    }
-                ]
-            };
+            return "I couldn't find an answer for that. Would you like me to explain it in simpler terms?";
         }
 
         if (!response.ok) {
@@ -195,19 +184,26 @@ app.post("/webhook", async (req, res) => {
         responseText = String(responseText);
 
         const responsePayload = {
-            fulfillmentText: responseText,  
-            fulfillmentMessages: [{ text: { text: [responseText] } }], 
-            outputContexts: [
-                {
-                    name: `projects/${projectId}/agent/sessions/${sessionId}/contexts/ask_anything_followup`,
-                    lifespanCount: 2,
-                    parameters: { query: String(userQuery) }
-                }
-            ]
+            fulfillmentText: String(responseText), // ✅ Ensure it's always a string
+            fulfillmentMessages: [{ text: { text: [String(responseText)] } }], // ✅ Proper format
         };
-
-        console.log("Webhook Response:", JSON.stringify(responsePayload, null, 2));
+        
+        // Only add context when needed
+        if (responseText.includes("Would you like me to explain it in simpler terms?")) {
+            responsePayload.outputContexts = [
+                {
+                    name: `projects/${req.body.session.split("/")[1]}/agent/sessions/${sessionId}/contexts/ask_anything_followup`,
+                    lifespanCount: 2,
+                    parameters: { query: userQuery }
+                }
+            ];
+        }
+        
+        // Debugging logs
+        console.log("✅ Final Response to Dialogflow:", JSON.stringify(responsePayload, null, 2));
+        
         res.json(responsePayload);
+        
 
     } catch (error) {
         console.error("Webhook Processing Error:", error.message, error.stack);
