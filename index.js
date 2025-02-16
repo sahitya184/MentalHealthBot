@@ -193,7 +193,19 @@ app.post("/webhook", async (req, res) => {
                 responseText = "I'm here to listen. Can you tell me more?";
         }
 
-        res.json({ fulfillmentText: responseText });
+        // ✅ Properly formatted response for Dialogflow (including outputContexts)
+        const responsePayload = {
+            fulfillmentText: responseText,  // Main response message
+            outputContexts: [
+                {
+                    name: `projects/${req.body.session.split("/")[1]}/agent/sessions/${sessionId}/contexts/ask_anything_followup`,
+                    lifespanCount: 2,
+                    parameters: { query: userQuery }
+                }
+            ]
+        };
+
+        res.json(responsePayload);
 
     } catch (error) {
         console.error("Webhook Processing Error:", error.message, error.stack);
