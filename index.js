@@ -5,7 +5,7 @@ const axios = require("axios");
 const app = express();
 app.use(bodyParser.json());
 
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const JOKE_API_URL = "https://v2.jokeapi.dev/joke/Any?format=json";
 const QUOTE_API_URL = "https://api.quotable.io/random";
 
@@ -42,26 +42,20 @@ async function getCopingStrategy() {
 async function getLLMResponse(prompt) {
     try {
         const response = await axios.post(
-            "https://api.openrouter.ai/v1/completions", // OpenRouter API endpoint
+            "https://api.openai.com/v1/completions", // OpenAI API endpoint
             {
-                model: "openrouter/mistral",
+                model: "text-davinci-003",  // You can use any available model from OpenAI
                 prompt: prompt,
                 max_tokens: 50,
             },
             {
                 headers: {
-                    "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
-                    "Content-Type": "application/json"
-                }
+                    "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`, // Use your OpenAI API key
+                    "Content-Type": "application/json",
+                },
             }
         );
-
-        // Ensure choices array is not empty before accessing
-        if (response.data.choices && response.data.choices.length > 0) {
-            return response.data.choices[0].text.trim();
-        } else {
-            return "Sorry, I couldn't generate a response at the moment.";
-        }
+        return response.data.choices[0].text.trim();
     } catch (error) {
         console.error("LLM API error:", error.message);
         return "I'm unable to provide a response at the moment. Please try again later.";
