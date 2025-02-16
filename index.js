@@ -82,7 +82,7 @@ async function handleCopingStrategiesIntent() {
     return "Take a deep breath. Try the 4-7-8 technique: Inhale for 4 seconds, hold for 7, and exhale for 8. Works wonders! 🌬️";
 }
 
-async function handleAskAnythingIntent(userQuery) {
+async function handleAskAnythingIntent(userQuery, sessionId) {
     try {
         if (!userQuery) {
             console.error("Error: userQuery is undefined or empty");
@@ -96,7 +96,18 @@ async function handleAskAnythingIntent(userQuery) {
         
         if (response.status === 404) {
             console.warn(`Wikipedia API: No article found for "${userQuery}"`);
-            return "I couldn't find an answer for that. Would you like me to explain it in simpler terms?";
+            
+            // Return a response that sets a follow-up context
+            return {
+                fulfillmentText: "I couldn't find an answer for that. Would you like me to explain it in simpler terms?",
+                outputContexts: [
+                    {
+                        name: `projects/mentalhealthbot-uwmv/agent/sessions/${sessionId}/contexts/ask_anything_followup`,
+                        lifespanCount: 2,
+                        parameters: { query: userQuery }
+                    }
+                ]
+            };
         }
 
         if (!response.ok) {
@@ -113,6 +124,13 @@ async function handleAskAnythingIntent(userQuery) {
     }
 }
 
+async function handleYesResponse(sessionId) {
+    console.log(`User confirmed with 'Yes' (Session: ${sessionId})`);
+    
+    // Define what should happen when the user says "Yes"
+    return "Great! Let's continue. What would you like to do next?";
+}
+
 
 // Webhook Endpoint
 
@@ -124,13 +142,15 @@ app.post("/webhook", async (req, res) => {
 
         if (isTelegram) {
             chatId = req.body.message.chat.id;
-            const messageText = req.body.message.text;
+            const messageText = req.body.message.text.toLowerCase(); // Convert to lowercase for consistency
 
             // Handle Telegram Commands
             if (messageText === "/start") {
                 responseText = await handleWelcomeIntent();
+            } else if (messageText === "yes") {
+                responseText = await handleYesResponse(chatId);  // Handle "Yes" response
             } else {
-                responseText = await handleAskAnythingIntent(messageText);
+                responseText = await handleAskAnythingIntent(messageText, chatId);  // Pass chatId as sessionId
             }
 
             await sendTelegramMessage(chatId, responseText);
@@ -143,10 +163,12 @@ app.post("/webhook", async (req, res) => {
             return res.json({ fulfillmentText: "Sorry, something went wrong. Please try again!" });
         }
 
+        // Extract sessionId from request
+        const sessionId = req.body.session ? req.body.session.split("/").pop() : "unknown_session";
         const intentName = req.body.queryResult.intent.displayName;
-        const userQuery = req.body.queryResult.queryText || "No query detected";
+        const userQuery = req.body.queryResult.queryText.toLowerCase() || "No query detected";  // Convert to lowercase
 
-        console.log(`Received Intent: ${intentName}, User Query: ${userQuery}`);
+        console.log(`Received Intent: ${intentName}, User Query: ${userQuery}, Session ID: ${sessionId}`);
 
         switch (intentName) {
             case "Welcome Intent":
@@ -162,13 +184,17 @@ app.post("/webhook", async (req, res) => {
                 responseText = await handleCopingStrategiesIntent();
                 break;
             case "Ask Anything":
-                responseText = await handleAskAnythingIntent(userQuery);
+                responseText = await handleAskAnythingIntent(userQuery, sessionId);  // Pass sessionId
+                break;
+            case "Yes Intent":  // If "Yes" is detected as an intent
+                responseText = await handleYesResponse(sessionId);
                 break;
             default:
                 responseText = "I'm here to listen. Can you tell me more?";
         }
 
         res.json({ fulfillmentText: responseText });
+
     } catch (error) {
         console.error("Webhook Processing Error:", error.message, error.stack);
         res.json({ fulfillmentText: "Oops! Something went wrong. Please try again later." });
