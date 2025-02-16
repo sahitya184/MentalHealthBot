@@ -39,7 +39,7 @@ async function getCopingStrategy() {
 }
 
 // Function to fetch response from Hugging Face LLM (using axios)
-async function getLLMResponse(prompt, retries = 3) {
+async function getLLMResponse(prompt, retries = 5) {
     try {
         const response = await axios.post(
             "https://api-inference.huggingface.co/models/google/flan-t5-small",
@@ -54,7 +54,8 @@ async function getLLMResponse(prompt, retries = 3) {
         );
 
         if (response.data && response.data.error && response.data.estimated_time) {
-            console.log(`Model loading, retrying in ${response.data.estimated_time} seconds...`);
+            console.log(`Model is still loading. Estimated time: ${response.data.estimated_time}s. Retries left: ${retries}`);
+
             if (retries > 0) {
                 await new Promise((resolve) => setTimeout(resolve, response.data.estimated_time * 1000));
                 return getLLMResponse(prompt, retries - 1);
@@ -63,10 +64,18 @@ async function getLLMResponse(prompt, retries = 3) {
             }
         }
 
-        return response.data[0]?.generated_text || "No response received.";
+        if (Array.isArray(response.data) && response.data[0]?.generated_text) {
+            return response.data[0].generated_text.trim();
+        } else if (response.data?.generated_text) {
+            return response.data.generated_text.trim();
+        } else {
+            return "No valid response received from the LLM.";
+        }
+        
     } catch (error) {
         console.error("Hugging Face API error:", error.response ? error.response.data : error.message);
-        return "I'm unable to process your request right now.";
+        return "I'm having trouble fetching a response. Let's try something else. 💙";
+
     }
 }
 
@@ -94,7 +103,14 @@ app.post("/webhook", async (req, res) => {
             break;
     }
 
-    res.json({ fulfillmentText });
+    res.json({
+        fulfillmentMessages: [
+            {
+                text: { text: [fulfillmentText] }
+            }
+        ]
+    });
+    
 });
 
 // Telegram webhook endpoint for /start command
