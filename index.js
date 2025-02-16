@@ -39,30 +39,37 @@ async function getCopingStrategy() {
 }
 
 // Function to fetch response from Hugging Face LLM (using axios)
-async function getLLMResponse(prompt) {
+async function getLLMResponse(prompt, retries = 3) {
     try {
         const response = await axios.post(
             "https://api-inference.huggingface.co/models/google/flan-t5-small",
             { inputs: prompt },
             {
                 headers: {
-                    "Authorization": `Bearer ${HUGGINGFACE_API_KEY}`,  // Ensure correct Bearer format
+                    "Authorization": `Bearer ${HUGGINGFACE_API_KEY}`,
                     "Content-Type": "application/json",
                 },
-                timeout: 8000,
+                timeout: 15000, // Increase timeout to handle model loading
             }
         );
 
-        if (response.data && response.data[0] && response.data[0].generated_text) {
-            return response.data[0].generated_text.trim();
-        } else {
-            throw new Error("Invalid Hugging Face response structure.");
+        if (response.data && response.data.error && response.data.estimated_time) {
+            console.log(`Model loading, retrying in ${response.data.estimated_time} seconds...`);
+            if (retries > 0) {
+                await new Promise((resolve) => setTimeout(resolve, response.data.estimated_time * 1000));
+                return getLLMResponse(prompt, retries - 1);
+            } else {
+                throw new Error("Model still loading after retries.");
+            }
         }
+
+        return response.data[0]?.generated_text || "No response received.";
     } catch (error) {
         console.error("Hugging Face API error:", error.response ? error.response.data : error.message);
         return "I'm unable to process your request right now.";
     }
 }
+
 
 // Main webhook endpoint
 app.post("/webhook", async (req, res) => {
